@@ -101,7 +101,6 @@
             position: relative;
         }
 
-        /* Raid Renklendirmeleri */
         .raid-section[data-raid="armoche"] { border-top-color: #3b82f6; }
         .raid-section[data-raid="kazeros"] { border-top-color: #ef4444; }
         .raid-section[data-raid="serca"] { border-top-color: #a855f7; }
@@ -131,17 +130,30 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+
+        /* Parti Tamamlandığında Kartın Görünümü */
+        .party-card.completed {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.05);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
         }
 
         .party-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed var(--card-border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .party-title {
             font-family: 'Rajdhani', sans-serif;
             font-size: 1.3rem;
             font-weight: 700;
             color: var(--accent-gold);
-            border-bottom: 1px dashed var(--card-border);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            text-align: center;
         }
 
         .member-list {
@@ -161,9 +173,12 @@
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 14px;
-            transition: background 0.2s;
         }
-        .member-item:hover { background: rgba(255,255,255,0.05); }
+
+        /* Gözlemci karakteri (Bigle roster) hafif vurgulamak istersen */
+        .member-item.tracker {
+            border-left: 2px solid var(--accent-gold);
+        }
 
         .member-name { font-weight: 600; color: #cbd5e1; }
         .member-region { font-size: 10px; color: var(--text-muted); background: #1e1e24; padding: 2px 4px; border-radius: 4px; margin-left: 6px;}
@@ -171,8 +186,8 @@
         .status-checkbox {
             appearance: none;
             -webkit-appearance: none;
-            width: 22px;
-            height: 22px;
+            width: 26px;
+            height: 26px;
             background-color: transparent;
             border: 2px solid var(--text-muted);
             border-radius: 6px;
@@ -191,29 +206,12 @@
             content: '✔';
             position: absolute;
             color: white;
-            font-size: 14px;
+            font-size: 16px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             font-weight: bold;
         }
-        
-        .status-checkbox:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .party-complete-badge {
-            display: none;
-            background: var(--success-green);
-            color: #fff;
-            text-align: center;
-            font-size: 12px;
-            font-weight: bold;
-            padding: 5px;
-            border-radius: 4px;
-            margin-top: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
     </style>
 </head>
 <body>
@@ -230,9 +228,9 @@
     </div>
 
     <script>
-        // ---------------------------------------------------
-        // ROSTER VERİ YAPISI (Serca Özel Yapılandırması)
-        // ---------------------------------------------------
+        // Bigle Roster: (Sistem log aramalarını SADECE bu karakterler üzerinden yapacak)
+        const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
+        
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
         function initDefaultData() {
@@ -243,35 +241,35 @@
             threeManRaids.forEach(raid => {
                 defaultData[raid] = [
                     { 
-                        id: `${raid}_p1`, name: "1. Parti", 
+                        id: `${raid}_p1`, name: "1. Parti", done: false,
                         members: [
-                            { name: "Aelathea", region: "CE", done: false },      // 1737.5
-                            { name: "Holysissy", region: "CE", done: false },     // 1724
-                            { name: "Dancergehan", region: "CE", done: false }    // 1716
+                            { name: "Aelathea", region: "CE" },
+                            { name: "Holysissy", region: "CE" },
+                            { name: "Dancergehan", region: "CE" } // Tracker
                         ]
                     },
                     { 
-                        id: `${raid}_p2`, name: "2. Parti", 
+                        id: `${raid}_p2`, name: "2. Parti", done: false,
                         members: [
-                            { name: "Anilessa", region: "CE", done: false },      // 1724
-                            { name: "Artissy", region: "CE", done: false },       // 1720
-                            { name: "Boksorgehan", region: "CE", done: false }    // 1715
+                            { name: "Anilessa", region: "CE" },
+                            { name: "Artissy", region: "CE" },
+                            { name: "Boksorgehan", region: "CE" } // Tracker
                         ]
                     },
                     { 
-                        id: `${raid}_p3`, name: "3. Parti", 
+                        id: `${raid}_p3`, name: "3. Parti", done: false,
                         members: [
-                            { name: "Laithwen", region: "CE", done: false },      // 1717.5
-                            { name: "Boisy", region: "CE", done: false },         // 1715
-                            { name: "Ayibogangehan", region: "CE", done: false }  // 1715
+                            { name: "Laithwen", region: "CE" },
+                            { name: "Boisy", region: "CE" },
+                            { name: "Ayibogangehan", region: "CE" } // Tracker
                         ]
                     },
                     { 
-                        id: `${raid}_p4`, name: "4. Parti", 
+                        id: `${raid}_p4`, name: "4. Parti", done: false,
                         members: [
-                            { name: "Zeradorpala", region: "CE", done: false },   // 1710
-                            { name: "Buckysy", region: "CE", done: false },       // 1704
-                            { name: "Orakgehan", region: "CE", done: false }      // 1715
+                            { name: "Zeradorpala", region: "CE" },
+                            { name: "Buckysy", region: "CE" },
+                            { name: "Orakgehan", region: "CE" } // Tracker
                         ]
                     }
                 ];
@@ -280,45 +278,45 @@
             // 2. SERCA ÖZEL: 2 Kişilik Partiler (Toplam 6 Parti)
             defaultData["serca"] = [
                 { 
-                    id: `serca_p1`, name: "1. Parti", 
+                    id: `serca_p1`, name: "1. Parti", done: false,
                     members: [
-                        { name: "Aelathea", region: "CE", done: false },
-                        { name: "Dancergehan", region: "CE", done: false }
+                        { name: "Aelathea", region: "CE" },
+                        { name: "Dancergehan", region: "CE" } // Tracker
                     ]
                 },
                 { 
-                    id: `serca_p2`, name: "2. Parti", 
+                    id: `serca_p2`, name: "2. Parti", done: false,
                     members: [
-                        { name: "Anilessa", region: "CE", done: false },
-                        { name: "Boksorgehan", region: "CE", done: false }
+                        { name: "Anilessa", region: "CE" },
+                        { name: "Boksorgehan", region: "CE" } // Tracker
                     ]
                 },
                 { 
-                    id: `serca_p3`, name: "3. Parti", 
+                    id: `serca_p3`, name: "3. Parti", done: false,
                     members: [
-                        { name: "Boisy", region: "CE", done: false },
-                        { name: "Ayibogangehan", region: "CE", done: false }
+                        { name: "Laithwen", region: "CE" },
+                        { name: "Ayibogangehan", region: "CE" } // Tracker
                     ]
                 },
                 { 
-                    id: `serca_p4`, name: "4. Parti", 
+                    id: `serca_p4`, name: "4. Parti", done: false,
                     members: [
-                        { name: "Buckysy", region: "CE", done: false },
-                        { name: "Orakgehan", region: "CE", done: false }
+                        { name: "Zeradorpala", region: "CE" },
+                        { name: "Orakgehan", region: "CE" } // Tracker
                     ]
                 },
                 { 
-                    id: `serca_p5`, name: "5. Parti (Ekstra)", 
+                    id: `serca_p5`, name: "5. Parti (Ekstra)", done: false,
                     members: [
-                        { name: "Holysissy", region: "CE", done: false },
-                        { name: "Jihyogehan", region: "CE", done: false }
+                        { name: "Holysissy", region: "CE" },
+                        { name: "Jihyogehan", region: "CE" } // Tracker
                     ]
                 },
                 { 
-                    id: `serca_p6`, name: "6. Parti (Ekstra)", 
+                    id: `serca_p6`, name: "6. Parti (Ekstra)", done: false,
                     members: [
-                        { name: "Artissy", region: "CE", done: false },
-                        { name: "Wintergehan", region: "CE", done: false }
+                        { name: "Artissy", region: "CE" },
+                        { name: "Wintergehan", region: "CE" } // Tracker
                     ]
                 }
             ];
@@ -329,15 +327,9 @@
         let rosterData = {};
 
         function loadData() {
-            let saved = localStorage.getItem('lostArkStaticTracker');
+            let saved = localStorage.getItem('lostArkStaticTrackerV2');
             if (saved) {
                 rosterData = JSON.parse(saved);
-                
-                // Eğer eski düzenden kalan 4 partili Serca varsa veriyi zorla sıfırla
-                if(rosterData["serca"] && rosterData["serca"].length !== 6) {
-                    rosterData = initDefaultData();
-                    saveData();
-                }
             } else {
                 rosterData = initDefaultData();
                 saveData();
@@ -345,7 +337,7 @@
         }
 
         function saveData() {
-            localStorage.setItem('lostArkStaticTracker', JSON.stringify(rosterData));
+            localStorage.setItem('lostArkStaticTrackerV2', JSON.stringify(rosterData));
         }
 
         // Haftalık Çarşamba Sıfırlaması
@@ -361,13 +353,13 @@
         }
 
         function checkWeeklyReset() {
-            const lastReset = localStorage.getItem('staticLastResetTime');
+            const lastReset = localStorage.getItem('staticLastResetTimeV2');
             const recentWedTime = getLastResetTimestamp();
 
             if (!lastReset || parseInt(lastReset) < recentWedTime) {
                 rosterData = initDefaultData(); 
                 saveData();
-                localStorage.setItem('staticLastResetTime', new Date().getTime()); 
+                localStorage.setItem('staticLastResetTimeV2', new Date().getTime()); 
                 console.log("Haftalık sıfırlama yapıldı.");
             }
         }
@@ -401,35 +393,32 @@
 
                 rosterData[raid].forEach((party, pIndex) => {
                     let card = document.createElement('div');
-                    card.className = 'party-card';
-
-                    let allDone = party.members.every(m => m.done);
+                    card.className = `party-card ${party.done ? 'completed' : ''}`;
 
                     let cardHTML = `
-                        <div class="party-header">${party.name}</div>
+                        <div class="party-header">
+                            <span class="party-title">${party.name}</span>
+                            <input type="checkbox" class="status-checkbox" 
+                                ${party.done ? 'checked' : ''} 
+                                onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
+                        </div>
                         <ul class="member-list">
                     `;
 
-                    party.members.forEach((member, mIndex) => {
+                    party.members.forEach((member) => {
+                        let isTracker = bigleRoster.includes(member.name.toLowerCase());
                         cardHTML += `
-                            <li class="member-item">
+                            <li class="member-item ${isTracker ? 'tracker' : ''}" title="${isTracker ? 'API Gözlemcisi' : ''}">
                                 <div>
                                     <span class="member-name">${member.name}</span>
                                     <span class="member-region">${member.region}</span>
                                 </div>
-                                <input type="checkbox" class="status-checkbox" 
-                                    ${member.done ? 'checked' : ''} 
-                                    onchange="toggleMemberStatus('${raid}', ${pIndex}, ${mIndex}, this.checked)">
                             </li>
                         `;
                     });
 
                     cardHTML += `</ul>`;
                     
-                    if(allDone) {
-                        cardHTML += `<div class="party-complete-badge" style="display:block;">TÜM PARTİ TAMAMLANDI</div>`;
-                    }
-
                     card.innerHTML = cardHTML;
                     grid.appendChild(card);
                 });
@@ -439,29 +428,32 @@
             });
         }
 
-        function toggleMemberStatus(raid, pIndex, mIndex, isChecked) {
-            rosterData[raid][pIndex].members[mIndex].done = isChecked;
+        // Tik işaretlendiğinde sadece Parti durumunu değiştir
+        function togglePartyStatus(raid, pIndex, isChecked) {
+            rosterData[raid][pIndex].done = isChecked;
             saveData();
             renderUI(); 
         }
 
         // ---------------------------------------------------
-        // CLOUDFLARE WORKER API SENKRONİZASYONU
+        // YENİ NESİL CLOUDFLARE WORKER API SENKRONİZASYONU
         // ---------------------------------------------------
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
             const lastResetTime = getLastResetTimestamp();
             let updatedCount = 0;
 
-            // Tüm raidleri ve partileri dolaşacak düz bir liste oluşturalım (Sadece bitirmemiş olanlar)
+            // Sadece bitmemiş partileri ve içindeki Gözlemciyi (Bigle karakterini) bulalım
             let fetchQueue = [];
             raidList.forEach(raid => {
                 rosterData[raid].forEach((party, pIndex) => {
-                    party.members.forEach((member, mIndex) => {
-                        if (!member.done) {
-                            fetchQueue.push({ raid, pIndex, mIndex, member });
+                    if (!party.done) {
+                        // Partideki Bigle karakterini bul
+                        let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
+                        if (tracker) {
+                            fetchQueue.push({ raid, pIndex, partyName: party.name, tracker });
                         }
-                    });
+                    }
                 });
             });
 
@@ -471,16 +463,15 @@
                 return;
             }
 
-            // Sync Butonunu kilitle
             const syncBtn = document.querySelector('.sync-btn');
             syncBtn.disabled = true;
             syncBtn.style.opacity = "0.5";
 
             for (let i = 0; i < fetchQueue.length; i++) {
                 let task = fetchQueue[i];
-                let char = task.member;
+                let char = task.tracker;
                 
-                statusText.innerText = `⏳ Taranıyor: ${char.name} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
+                statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) -> Gözlemci: ${char.name} [${i+1}/${fetchQueue.length}]`;
                 statusText.style.color = "var(--accent-gold)";
 
                 let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`;
@@ -507,7 +498,8 @@
 
                                 // Eğer bu log haftalık reseti geçmişse VE aradığımız raid ismi logda geçiyorsa
                                 if (killTime > lastResetTime && bossName.includes(task.raid)) {
-                                    rosterData[task.raid][task.pIndex].members[task.mIndex].done = true;
+                                    // Bütün partiyi bitmiş olarak işaretle
+                                    rosterData[task.raid][task.pIndex].done = true;
                                     updatedCount++;
                                     break; 
                                 }
@@ -531,7 +523,6 @@
                     renderUI(); 
                 }
 
-                // Cloudflare sunucusunu boğmamak için 2.5 saniye bekle
                 await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
@@ -540,8 +531,8 @@
             
             statusText.style.color = "var(--success-green)";
             statusText.innerText = updatedCount > 0 
-                ? `✅ Tarama bitti! ${updatedCount} yeni karakter raid'i tamamlamış.` 
-                : `✅ Tarama bitti. Yeni tamamlanan raid bulunamadı.`;
+                ? `✅ Tarama bitti! ${updatedCount} adet parti raid'ini tamamladı.` 
+                : `✅ Tarama bitti. Yeni tamamlanan parti bulunamadı.`;
 
             setTimeout(() => { 
                 statusText.innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.';
