@@ -231,39 +231,113 @@
 
     <script>
         // ---------------------------------------------------
-        // ROSTER VERİ YAPISI (Daha Sonra Burayı Düzenleyeceksin)
+        // ROSTER VERİ YAPISI (Serca Özel Yapılandırması)
         // ---------------------------------------------------
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // Placeholder karakter oluşturan yardımcı fonksiyon
-        function createPlaceholders(prefix) {
-            return [
-                { name: `${prefix}_Oyuncu1`, region: "CE", done: false },
-                { name: `${prefix}_Oyuncu2`, region: "CE", done: false },
-                { name: `${prefix}_Oyuncu3`, region: "CE", done: false },
-                { name: `${prefix}_Oyuncu4`, region: "CE", done: false }
+        function initDefaultData() {
+            let defaultData = {};
+            
+            // 1. DİĞER RAİDLER: Armoche, Kazeros, Cathedral (3 Kişilik Partiler)
+            const threeManRaids = ["armoche", "kazeros", "cathedral"];
+            threeManRaids.forEach(raid => {
+                defaultData[raid] = [
+                    { 
+                        id: `${raid}_p1`, name: "1. Parti", 
+                        members: [
+                            { name: "Aelathea", region: "CE", done: false },      // 1737.5
+                            { name: "Holysissy", region: "CE", done: false },     // 1724
+                            { name: "Dancergehan", region: "CE", done: false }    // 1716
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p2`, name: "2. Parti", 
+                        members: [
+                            { name: "Anilessa", region: "CE", done: false },      // 1724
+                            { name: "Artissy", region: "CE", done: false },       // 1720
+                            { name: "Boksorgehan", region: "CE", done: false }    // 1715
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p3`, name: "3. Parti", 
+                        members: [
+                            { name: "Laithwen", region: "CE", done: false },      // 1717.5
+                            { name: "Boisy", region: "CE", done: false },         // 1715
+                            { name: "Ayibogangehan", region: "CE", done: false }  // 1715
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p4`, name: "4. Parti", 
+                        members: [
+                            { name: "Zeradorpala", region: "CE", done: false },   // 1710
+                            { name: "Buckysy", region: "CE", done: false },       // 1704
+                            { name: "Orakgehan", region: "CE", done: false }      // 1715
+                        ]
+                    }
+                ];
+            });
+
+            // 2. SERCA ÖZEL: 2 Kişilik Partiler (Toplam 6 Parti)
+            defaultData["serca"] = [
+                { 
+                    id: `serca_p1`, name: "1. Parti", 
+                    members: [
+                        { name: "Aelathea", region: "CE", done: false },
+                        { name: "Dancergehan", region: "CE", done: false }
+                    ]
+                },
+                { 
+                    id: `serca_p2`, name: "2. Parti", 
+                    members: [
+                        { name: "Anilessa", region: "CE", done: false },
+                        { name: "Boksorgehan", region: "CE", done: false }
+                    ]
+                },
+                { 
+                    id: `serca_p3`, name: "3. Parti", 
+                    members: [
+                        { name: "Laithwen", region: "CE", done: false },
+                        { name: "Ayibogangehan", region: "CE", done: false }
+                    ]
+                },
+                { 
+                    id: `serca_p4`, name: "4. Parti", 
+                    members: [
+                        { name: "Zeradorpala", region: "CE", done: false },
+                        { name: "Orakgehan", region: "CE", done: false }
+                    ]
+                },
+                { 
+                    id: `serca_p5`, name: "5. Parti (Ekstra)", 
+                    members: [
+                        { name: "Holysissy", region: "CE", done: false },
+                        { name: "Jihyogehan", region: "CE", done: false }
+                    ]
+                },
+                { 
+                    id: `serca_p6`, name: "6. Parti (Ekstra)", 
+                    members: [
+                        { name: "Artissy", region: "CE", done: false },
+                        { name: "Wintergehan", region: "CE", done: false }
+                    ]
+                }
             ];
+
+            return defaultData;
         }
 
         let rosterData = {};
-
-        function initDefaultData() {
-            let defaultData = {};
-            raidList.forEach(raid => {
-                defaultData[raid] = [
-                    { id: `${raid}_p1`, name: "1. Parti", members: createPlaceholders("P1") },
-                    { id: `${raid}_p2`, name: "2. Parti", members: createPlaceholders("P2") },
-                    { id: `${raid}_p3`, name: "3. Parti", members: createPlaceholders("P3") },
-                    { id: `${raid}_p4`, name: "4. Parti", members: createPlaceholders("P4") }
-                ];
-            });
-            return defaultData;
-        }
 
         function loadData() {
             let saved = localStorage.getItem('lostArkStaticTracker');
             if (saved) {
                 rosterData = JSON.parse(saved);
+                
+                // Eğer eski düzenden kalan 4 partili Serca varsa veriyi zorla sıfırla
+                if(rosterData["serca"] && rosterData["serca"].length !== 6) {
+                    rosterData = initDefaultData();
+                    saveData();
+                }
             } else {
                 rosterData = initDefaultData();
                 saveData();
@@ -291,7 +365,7 @@
             const recentWedTime = getLastResetTimestamp();
 
             if (!lastReset || parseInt(lastReset) < recentWedTime) {
-                rosterData = initDefaultData(); // Tikleri sıfırlamak için varsayılana dön
+                rosterData = initDefaultData(); 
                 saveData();
                 localStorage.setItem('staticLastResetTime', new Date().getTime()); 
                 console.log("Haftalık sıfırlama yapıldı.");
@@ -368,7 +442,7 @@
         function toggleMemberStatus(raid, pIndex, mIndex, isChecked) {
             rosterData[raid][pIndex].members[mIndex].done = isChecked;
             saveData();
-            renderUI(); // Tüm parti bittiyse badge'i göstermek için yenile
+            renderUI(); 
         }
 
         // ---------------------------------------------------
@@ -435,7 +509,7 @@
                                 if (killTime > lastResetTime && bossName.includes(task.raid)) {
                                     rosterData[task.raid][task.pIndex].members[task.mIndex].done = true;
                                     updatedCount++;
-                                    break; // Bu karakter için bu boss bulundu, log aramayı kes.
+                                    break; 
                                 }
                             }
                             success = true; 
@@ -452,7 +526,6 @@
                     }
                 }
 
-                // UI'ı her oyuncu bulunduğunda anlık güncelle
                 if (success) {
                     saveData();
                     renderUI(); 
