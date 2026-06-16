@@ -236,8 +236,8 @@
         function initDefaultData() {
             let defaultData = {};
             
-            // 1. DİĞER RAİDLER: Armoche, Kazeros, Cathedral (3 Kişilik Partiler)
-            const threeManRaids = ["armoche", "kazeros", "cathedral"];
+            // 1. DİĞER RAİDLER: Armoche ve Kazeros (3 Kişilik Partiler)
+            const threeManRaids = ["armoche", "kazeros"];
             threeManRaids.forEach(raid => {
                 defaultData[raid] = [
                     { 
@@ -275,51 +275,54 @@
                 ];
             });
 
-            // 2. SERCA ÖZEL: 2 Kişilik Partiler (Toplam 6 Parti)
-            defaultData["serca"] = [
-                { 
-                    id: `serca_p1`, name: "1. Parti", done: false,
-                    members: [
-                        { name: "Aelathea", region: "CE" },
-                        { name: "Dancergehan", region: "CE" } // Tracker
-                    ]
-                },
-                { 
-                    id: `serca_p2`, name: "2. Parti", done: false,
-                    members: [
-                        { name: "Anilessa", region: "CE" },
-                        { name: "Boksorgehan", region: "CE" } // Tracker
-                    ]
-                },
-                { 
-                    id: `serca_p3`, name: "3. Parti", done: false,
-                    members: [
-                        { name: "Laithwen", region: "CE" },
-                        { name: "Ayibogangehan", region: "CE" } // Tracker
-                    ]
-                },
-                { 
-                    id: `serca_p4`, name: "4. Parti", done: false,
-                    members: [
-                        { name: "Zeradorpala", region: "CE" },
-                        { name: "Orakgehan", region: "CE" } // Tracker
-                    ]
-                },
-                { 
-                    id: `serca_p5`, name: "5. Parti (Ekstra)", done: false,
-                    members: [
-                        { name: "Holysissy", region: "CE" },
-                        { name: "Jihyogehan", region: "CE" } // Tracker
-                    ]
-                },
-                { 
-                    id: `serca_p6`, name: "6. Parti (Ekstra)", done: false,
-                    members: [
-                        { name: "Artissy", region: "CE" },
-                        { name: "Wintergehan", region: "CE" } // Tracker
-                    ]
-                }
-            ];
+            // 2. SERCA VE CATHEDRAL ÖZEL: 2 Kişilik Partiler (Toplam 6 Parti - 2 Aelathea, 4 Holysissy)
+            const twoManRaids = ["serca", "cathedral"];
+            twoManRaids.forEach(raid => {
+                defaultData[raid] = [
+                    { 
+                        id: `${raid}_p1`, name: "1. Parti", done: false,
+                        members: [
+                            { name: "Aelathea", region: "CE" },
+                            { name: "Dancergehan", region: "CE" } // Tracker
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p2`, name: "2. Parti", done: false,
+                        members: [
+                            { name: "Anilessa", region: "CE" },
+                            { name: "Boksorgehan", region: "CE" } // Tracker
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p3`, name: "3. Parti", done: false,
+                        members: [
+                            { name: "Holysissy", region: "CE" },
+                            { name: "Ayibogangehan", region: "CE" } // Tracker
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p4`, name: "4. Parti", done: false,
+                        members: [
+                            { name: "Artissy", region: "CE" },
+                            { name: "Orakgehan", region: "CE" } // Tracker
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p5`, name: "5. Parti (Ekstra)", done: false,
+                        members: [
+                            { name: "Boisy", region: "CE" },
+                            { name: "Jihyogehan", region: "CE" } // Tracker
+                        ]
+                    },
+                    { 
+                        id: `${raid}_p6`, name: "6. Parti (Ekstra)", done: false,
+                        members: [
+                            { name: "Buckysy", region: "CE" },
+                            { name: "Wintergehan", region: "CE" } // Tracker
+                        ]
+                    }
+                ];
+            });
 
             return defaultData;
         }
@@ -327,7 +330,8 @@
         let rosterData = {};
 
         function loadData() {
-            let saved = localStorage.getItem('lostArkStaticTrackerV2');
+            // Önbellek çakışmasını önlemek için sürümü V4 olarak güncelledik
+            let saved = localStorage.getItem('lostArkStaticTrackerV4');
             if (saved) {
                 rosterData = JSON.parse(saved);
             } else {
@@ -337,7 +341,7 @@
         }
 
         function saveData() {
-            localStorage.setItem('lostArkStaticTrackerV2', JSON.stringify(rosterData));
+            localStorage.setItem('lostArkStaticTrackerV4', JSON.stringify(rosterData));
         }
 
         // Haftalık Çarşamba Sıfırlaması
@@ -353,13 +357,13 @@
         }
 
         function checkWeeklyReset() {
-            const lastReset = localStorage.getItem('staticLastResetTimeV2');
+            const lastReset = localStorage.getItem('staticLastResetTimeV4');
             const recentWedTime = getLastResetTimestamp();
 
             if (!lastReset || parseInt(lastReset) < recentWedTime) {
                 rosterData = initDefaultData(); 
                 saveData();
-                localStorage.setItem('staticLastResetTimeV2', new Date().getTime()); 
+                localStorage.setItem('staticLastResetTimeV4', new Date().getTime()); 
                 console.log("Haftalık sıfırlama yapıldı.");
             }
         }
