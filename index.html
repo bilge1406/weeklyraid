@@ -109,6 +109,8 @@
             border-radius: 12px;
             padding: 25px;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
         .raid-section[data-raid="armoche"] { border-top-color: #3b82f6; }
@@ -132,6 +134,7 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 20px;
+            margin-bottom: 20px;
         }
 
         .party-card {
@@ -159,12 +162,32 @@
             padding-bottom: 10px;
             margin-bottom: 15px;
         }
+        
+        .party-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         .party-title {
             font-family: 'Rajdhani', sans-serif;
             font-size: 1.3rem;
             font-weight: 700;
             color: var(--accent-gold);
+        }
+
+        .delete-party-btn {
+            background: transparent;
+            color: var(--text-muted);
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 0;
+        }
+        .delete-party-btn:hover {
+            color: var(--accent-red);
+            text-shadow: 0 0 5px rgba(225, 29, 72, 0.5);
         }
 
         .member-list {
@@ -240,6 +263,27 @@
             background: rgba(212, 175, 55, 0.05);
         }
 
+        .add-party-btn {
+            background: rgba(255, 255, 255, 0.02);
+            border: 2px dashed var(--card-border);
+            color: var(--text-muted);
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            letter-spacing: 1px;
+        }
+        .add-party-btn:hover {
+            border-color: var(--success-green);
+            color: var(--success-green);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
         .status-checkbox {
             appearance: none;
             -webkit-appearance: none;
@@ -291,7 +335,8 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
     <script>
         // --- SENİN CLOUDFLARE WORKER ADRESİN ---
@@ -300,13 +345,12 @@
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ (Güncellendi)
+        // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
 
         function initDefaultData() {
             let defaultData = {};
             
-            // 1. DİĞER RAİDLER: Armoche ve Kazeros (3 Kişilik)
             const threeManRaids = ["armoche", "kazeros"];
             threeManRaids.forEach(raid => {
                 defaultData[raid] = [
@@ -317,7 +361,6 @@
                 ];
             });
 
-            // 2. SERCA İÇİN STANDART 2'Lİ PARTİLER
             defaultData["serca"] = [
                 { id: `serca_p1`, name: "1. Parti", done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
                 { id: `serca_p2`, name: "2. Parti", done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
@@ -327,7 +370,6 @@
                 { id: `serca_p6`, name: "6. Parti (Ekstra)", done: false, members: [{ name: "Buckysy", region: "CE" }, { name: "Wintergehan", region: "CE" }] }
             ];
 
-            // 3. CATHEDRAL İÇİN ÖZEL HM / NM AYRIMI (reqGS eklendi)
             defaultData["cathedral"] = [
                 { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
                 { id: `cathedral_p2`, name: "2. Parti (HM)", reqGS: 1720, done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
@@ -388,7 +430,7 @@
             }
         }
 
-        // Haftalık Çarşamba Sıfırlama Mantığı
+        // Haftalık Sıfırlama Mantığı
         function getLastResetTimestamp() {
             let now = new Date();
             let resetDate = new Date(now);
@@ -402,7 +444,6 @@
 
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
-            
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 rosterData = initDefaultData(); 
                 await saveDataToCloud();
@@ -419,14 +460,8 @@
             ev.dataTransfer.effectAllowed = "move";
         }
 
-        function dragOver(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.add('drag-over');
-        }
-
-        function dragLeave(ev) {
-            ev.currentTarget.classList.remove('drag-over');
-        }
+        function dragOver(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+        function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
 
         async function drop(ev, targetRaid, targetPIndex, targetMIndex) {
             ev.preventDefault();
@@ -446,7 +481,45 @@
             document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
             await saveDataToCloud();
             document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+        }
+
+        // ---------------------------------------------------
+        // YENİ: PARTİ EKLEME & SİLME
+        // ---------------------------------------------------
+        async function addParty(raid) {
+            const partyName = prompt(`Yeni partinin adını girin (Örn: 7. Parti (Altlar)):`);
+            if (!partyName || partyName.trim() === "") return;
+
+            const gsStr = prompt(`Bu parti için Minimum Gearscore nedir?`, MIN_GS[raid]);
+            if (!gsStr) return;
+            
+            const reqGS = parseFloat(gsStr) || MIN_GS[raid];
+
+            rosterData[raid].push({
+                id: `${raid}_p_${Date.now()}`,
+                name: partyName.trim(),
+                reqGS: reqGS,
+                done: false,
+                members: []
+            });
+
+            renderUI();
+            document.getElementById('sync-status').innerText = "☁️ Yeni parti buluta kaydediliyor...";
+            await saveDataToCloud();
+            document.getElementById('sync-status').innerText = "✅ Parti başarıyla eklendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+        }
+
+        async function removeParty(raid, pIndex, partyName) {
+            if (confirm(`⚠️ DİKKAT: "${partyName}" adlı partiyi içindeki tüm oyuncularla birlikte silmek istediğinize emin misiniz?`)) {
+                rosterData[raid].splice(pIndex, 1);
+                renderUI();
+                document.getElementById('sync-status').innerText = "☁️ Parti silinmesi buluta kaydediliyor...";
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Parti başarıyla silindi.";
+                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+            }
         }
 
         // ---------------------------------------------------
@@ -460,8 +533,6 @@
             if (!gsStr) return;
 
             const gs = parseFloat(gsStr);
-            
-            // Eğer partinin özel bir GS sınırı varsa onu kullan, yoksa genel sınırı kullan
             const partyReqGS = rosterData[raid][pIndex].reqGS;
             const reqGS = partyReqGS || MIN_GS[raid];
 
@@ -476,7 +547,7 @@
             document.getElementById('sync-status').innerText = "☁️ Yeni karakter buluta kaydediliyor...";
             await saveDataToCloud();
             document.getElementById('sync-status').innerText = "✅ Karakter eklendi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
         async function removeCharacter(raid, pIndex, mIndex, charName) {
@@ -486,7 +557,7 @@
                 document.getElementById('sync-status').innerText = "☁️ Silme işlemi buluta kaydediliyor...";
                 await saveDataToCloud();
                 document.getElementById('sync-status').innerText = "✅ Karakter silindi.";
-                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
             }
         }
 
@@ -519,7 +590,10 @@
 
                         let cardHTML = `
                             <div class="party-header">
-                                <span class="party-title">${party.name}</span>
+                                <div class="party-header-left">
+                                    <span class="party-title">${party.name}</span>
+                                    <button class="delete-party-btn" onclick="removeParty('${raid}', ${pIndex}, '${party.name}')" title="Partiyi Komple Sil">🗑️</button>
+                                </div>
                                 <input type="checkbox" class="status-checkbox" 
                                     ${party.done ? 'checked' : ''} 
                                     onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
@@ -559,6 +633,14 @@
                 }
 
                 section.appendChild(grid);
+                
+                // YENİ: Parti Ekleme Butonu (Gridin Altında)
+                let addPartyBtn = document.createElement('button');
+                addPartyBtn.className = 'add-party-btn';
+                addPartyBtn.innerText = `+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle`;
+                addPartyBtn.onclick = () => addParty(raid);
+                section.appendChild(addPartyBtn);
+
                 container.appendChild(section);
             });
         }
@@ -569,7 +651,7 @@
             document.getElementById('sync-status').innerText = "☁️ Buluta kaydediliyor...";
             await saveDataToCloud(); 
             document.getElementById('sync-status').innerText = "✅ Buluta kaydedildi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
         // ---------------------------------------------------
@@ -653,9 +735,7 @@
                     }
                 }
 
-                if (success) {
-                    renderUI(); 
-                }
+                if (success) { renderUI(); }
                 await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
