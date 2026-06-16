@@ -301,8 +301,8 @@
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ
-        const MIN_GS = { "armoche": 1720, "kazeros": 1730, "serca": 1730, "cathedral": 1700 };
+        // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ (Normal Mode Sınırlarına Çekildi)
+        const MIN_GS = { "armoche": 1700, "kazeros": 1700, "serca": 1700, "cathedral": 1700 };
 
         function initDefaultData() {
             let defaultData = {};
@@ -328,7 +328,6 @@
                 ];
             });
 
-            // YENİ: Sıfırlama zamanını bulut verisine gömüyoruz (Bug çözümü)
             defaultData._lastReset = new Date().getTime();
 
             return defaultData;
@@ -354,11 +353,11 @@
                 }
             } catch (error) {
                 console.error("Buluttan veri çekilemedi:", error);
-                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Worker ayarlarını kontrol edin.";
+                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin.";
                 return;
             }
             
-            await checkWeeklyReset(); // Her girişte bulut saatini kontrol et
+            await checkWeeklyReset(); 
             renderUI();
             
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
@@ -395,7 +394,6 @@
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
             
-            // KONTROLÜ LOCALSTORAGE YERİNE BULUTTAN GELEN VERİDEN YAPIYORUZ
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 rosterData = initDefaultData(); 
                 await saveDataToCloud();
