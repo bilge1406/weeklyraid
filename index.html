@@ -291,7 +291,8 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
     <script>
         // --- SENİN CLOUDFLARE WORKER ADRESİN ---
@@ -327,7 +328,7 @@
                 ];
             });
 
-            // YENİ: Sıfırlama zamanını bulut verisine gömüyoruz
+            // YENİ: Sıfırlama zamanını bulut verisine gömüyoruz (Bug çözümü)
             defaultData._lastReset = new Date().getTime();
 
             return defaultData;
@@ -353,8 +354,322 @@
                 }
             } catch (error) {
                 console.error("Buluttan veri çekilemedi:", error);
-                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin.";
+                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Worker ayarlarını kontrol edin.";
                 return;
             }
             
-            await checkWeeklyReset(); // YENİ RESET KONTROLÜ
+            await checkWeeklyReset(); // Her girişte bulut saatini kontrol et
+            renderUI();
+            
+            document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
+        }
+
+        async function saveDataToCloud() {
+            try {
+                if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
+
+                await fetch(WORKER_URL + "/?action=save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(rosterData)
+                });
+            } catch (error) {
+                console.error("Buluta kaydedilemedi:", error);
+                document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
+            }
+        }
+
+        // Haftalık Çarşamba Sıfırlama Mantığı
+        function getLastResetTimestamp() {
+            let now = new Date();
+            let resetDate = new Date(now);
+            resetDate.setHours(13, 0, 0, 0);
+            let day = now.getDay(); 
+            let daysToSubtract = (day >= 3) ? (day - 3) : (day + 4);
+            if (day === 3 && now.getHours() < 13) { daysToSubtract = 7; }
+            resetDate.setDate(now.getDate() - daysToSubtract);
+            return resetDate.getTime();
+        }
+
+        async function checkWeeklyReset() {
+            const recentWedTime = getLastResetTimestamp();
+            
+            // KONTROLÜ LOCALSTORAGE YERİNE BULUTTAN GELEN VERİDEN YAPIYORUZ
+            if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
+                rosterData = initDefaultData(); 
+                await saveDataToCloud();
+                console.log("Haftalık bulut sıfırlaması yapıldı.");
+            }
+        }
+
+        // ---------------------------------------------------
+        // SÜRÜKLE & BIRAK (DRAG & DROP)
+        // ---------------------------------------------------
+        function dragStart(ev, raid, pIndex, mIndex) {
+            const data = JSON.stringify({ raid, pIndex, mIndex });
+            ev.dataTransfer.setData("text/plain", data);
+            ev.dataTransfer.effectAllowed = "move";
+        }
+
+        function dragOver(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(ev) {
+            ev.currentTarget.classList.remove('drag-over');
+        }
+
+        async function drop(ev, targetRaid, targetPIndex, targetMIndex) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('drag-over');
+            
+            const data = ev.dataTransfer.getData("text/plain");
+            if (!data) return;
+
+            const source = JSON.parse(data);
+            if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
+
+            const tempMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
+            rosterData[source.raid][source.pIndex].members[source.mIndex] = rosterData[targetRaid][targetPIndex].members[targetMIndex];
+            rosterData[targetRaid][targetPIndex].members[targetMIndex] = tempMember;
+
+            renderUI(); 
+            document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
+            await saveDataToCloud();
+            document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+        }
+
+        // ---------------------------------------------------
+        // KARAKTER EKLEME & SİLME
+        // ---------------------------------------------------
+        async function addCharacter(raid, pIndex) {
+            const charName = prompt(`Yeni karakterin nickini girin:`);
+            if (!charName || charName.trim() === "") return;
+
+            const gsStr = prompt(`"${charName}" için Gearscore girin (Örn: 1720):`);
+            if (!gsStr) return;
+
+            const gs = parseFloat(gsStr);
+            const reqGS = MIN_GS[raid];
+
+            if (isNaN(gs) || gs < reqGS) {
+                alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), ${raid.toUpperCase()} raidi için yetersiz!\nMinimum GS gereksinimi: ${reqGS}`);
+                return;
+            }
+
+            rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE" });
+            renderUI();
+            document.getElementById('sync-status').innerText = "☁️ Yeni karakter buluta kaydediliyor...";
+            await saveDataToCloud();
+            document.getElementById('sync-status').innerText = "✅ Karakter eklendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+        }
+
+        async function removeCharacter(raid, pIndex, mIndex, charName) {
+            if (confirm(`"${charName}" karakterini bu partiden silmek istediğinize emin misiniz?`)) {
+                rosterData[raid][pIndex].members.splice(mIndex, 1);
+                renderUI();
+                document.getElementById('sync-status').innerText = "☁️ Silme işlemi buluta kaydediliyor...";
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Karakter silindi.";
+                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+            }
+        }
+
+        // ---------------------------------------------------
+        // UI OLUŞTURMA (RENDER)
+        // ---------------------------------------------------
+        function renderUI() {
+            const container = document.getElementById('raid-container');
+            container.innerHTML = '';
+
+            const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
+
+            raidList.forEach(raid => {
+                let section = document.createElement('div');
+                section.className = 'raid-section';
+                section.setAttribute('data-raid', raid);
+
+                let title = document.createElement('h2');
+                title.className = 'raid-title';
+                title.innerText = raidDisplayNames[raid];
+                section.appendChild(title);
+
+                let grid = document.createElement('div');
+                grid.className = 'parties-grid';
+
+                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                    rosterData[raid].forEach((party, pIndex) => {
+                        let card = document.createElement('div');
+                        card.className = `party-card ${party.done ? 'completed' : ''}`;
+
+                        let cardHTML = `
+                            <div class="party-header">
+                                <span class="party-title">${party.name}</span>
+                                <input type="checkbox" class="status-checkbox" 
+                                    ${party.done ? 'checked' : ''} 
+                                    onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
+                            </div>
+                            <ul class="member-list">
+                        `;
+
+                        if (party.members && Array.isArray(party.members)) {
+                            party.members.forEach((member, mIndex) => {
+                                let isTracker = bigleRoster.includes(member.name.toLowerCase());
+                                
+                                cardHTML += `
+                                    <li class="member-item ${isTracker ? 'tracker' : ''}" 
+                                        title="Takaslamak için sürükleyin${isTracker ? ' (API Gözlemcisi)' : ''}"
+                                        draggable="true"
+                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})"
+                                        ondragover="dragOver(event)"
+                                        ondragleave="dragLeave(event)"
+                                        ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
+                                        
+                                        <div class="member-info">
+                                            <span class="member-name">${member.name}</span>
+                                            <span class="member-region">${member.region}</span>
+                                        </div>
+                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
+                                    </li>
+                                `;
+                            });
+                        }
+
+                        cardHTML += `</ul>`;
+                        cardHTML += `<button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>`;
+                        
+                        card.innerHTML = cardHTML;
+                        grid.appendChild(card);
+                    });
+                }
+
+                section.appendChild(grid);
+                container.appendChild(section);
+            });
+        }
+
+        async function togglePartyStatus(raid, pIndex, isChecked) {
+            rosterData[raid][pIndex].done = isChecked;
+            renderUI(); 
+            document.getElementById('sync-status').innerText = "☁️ Buluta kaydediliyor...";
+            await saveDataToCloud(); 
+            document.getElementById('sync-status').innerText = "✅ Buluta kaydedildi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+        }
+
+        // ---------------------------------------------------
+        // API LOG SENKRONİZASYONU
+        // ---------------------------------------------------
+        async function syncAllParties() {
+            const statusText = document.getElementById('sync-status');
+            const lastResetTime = getLastResetTimestamp();
+            let updatedCount = 0;
+
+            let fetchQueue = [];
+            raidList.forEach(raid => {
+                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                    rosterData[raid].forEach((party, pIndex) => {
+                        if (!party.done) {
+                            let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
+                            if (tracker) {
+                                fetchQueue.push({ raid, pIndex, partyName: party.name, tracker });
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (fetchQueue.length === 0) {
+                statusText.innerText = "✅ Bütün partiler zaten tamamlanmış!";
+                statusText.style.color = "var(--success-green)";
+                return;
+            }
+
+            const syncBtn = document.querySelector('.sync-btn');
+            syncBtn.disabled = true;
+            syncBtn.style.opacity = "0.5";
+
+            for (let i = 0; i < fetchQueue.length; i++) {
+                let task = fetchQueue[i];
+                let char = task.tracker;
+                
+                statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
+                statusText.style.color = "var(--accent-gold)";
+
+                let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`;
+                let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
+
+                let success = false;
+                let retryCount = 0;
+
+                while (!success && retryCount < 2) {
+                    try {
+                        let response = await fetch(proxyUrl);
+                        if (response.status === 429) throw new Error("429_RATE_LIMIT");
+                        if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+
+                        let pageText = await response.text();
+                        
+                        if (pageText) {
+                            let regex = /\{[^}]*boss:"([^"]+)"[^}]*timestamp:(\d+)[^}]*\}/g;
+                            let match;
+
+                            while ((match = regex.exec(pageText)) !== null) {
+                                let bossName = match[1].toLowerCase();
+                                let killTime = parseInt(match[2]);
+
+                                if (killTime > lastResetTime && bossName.includes(task.raid)) {
+                                    rosterData[task.raid][task.pIndex].done = true;
+                                    updatedCount++;
+                                    break; 
+                                }
+                            }
+                            success = true; 
+                        }
+                    } catch (error) {
+                        if (error.message === "429_RATE_LIMIT") {
+                            retryCount++;
+                            statusText.innerText = `⚠️ 429 Hızı Aşıldı. 5sn mola...`;
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        } else {
+                            console.error("Fetch Hatası:", error);
+                            break; 
+                        }
+                    }
+                }
+
+                if (success) {
+                    renderUI(); 
+                }
+                await new Promise(resolve => setTimeout(resolve, 2500));
+            }
+
+            if (updatedCount > 0) {
+                statusText.innerText = "☁️ Yeni tamamlanan raidler buluta kaydediliyor...";
+                await saveDataToCloud();
+            }
+
+            syncBtn.disabled = false;
+            syncBtn.style.opacity = "1";
+            
+            statusText.style.color = "var(--success-green)";
+            statusText.innerText = updatedCount > 0 
+                ? `✅ Tarama bitti! ${updatedCount} adet parti raid'ini tamamladı.` 
+                : `✅ Tarama bitti. Yeni tamamlanan parti bulunamadı.`;
+
+            setTimeout(() => { 
+                statusText.innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.';
+                statusText.style.color = 'var(--accent-gold)';
+            }, 6000);
+        }
+
+        // --- BAŞLATMA (Buluttan Çekerek) ---
+        loadDataFromCloud();
+
+    </script>
+</body>
+</html>
