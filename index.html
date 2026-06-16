@@ -1,301 +1,4 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
-
-        :root {
-            --bg-color: #0a0a0c;
-            --card-bg: #141418;
-            --card-border: #2a2a35;
-            --text-main: #e2e8f0;
-            --text-muted: #838392;
-            --accent-gold: #d4af37;
-            --accent-red: #e11d48;
-            --success-green: #10b981;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(225, 29, 72, 0.05), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.05), transparent 25%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        h1 {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 3rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 10px;
-            text-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
-            text-align: center;
-        }
-
-        h1 span { color: var(--accent-gold); }
-
-        .dashboard-controls {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            padding: 20px 30px;
-            border-radius: 8px;
-            margin-bottom: 40px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            width: 100%;
-        }
-
-        .sync-btn, .cloud-btn {
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            letter-spacing: 1px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
-            flex: 1;
-        }
-
-        .sync-btn { background: linear-gradient(135deg, var(--accent-red), #9f1239); }
-        .sync-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4); }
-
-        .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 0.5; }
-        .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
-
-        #sync-status {
-            font-size: 14px;
-            color: var(--accent-gold);
-            font-weight: 600;
-            min-height: 20px;
-            text-align: center;
-        }
-
-        .raid-container {
-            width: 100%;
-            max-width: 1200px;
-            display: flex;
-            flex-direction: column;
-            gap: 50px;
-        }
-
-        .raid-section {
-            background: rgba(20, 20, 24, 0.6);
-            border-top: 3px solid var(--card-border);
-            border-radius: 12px;
-            padding: 25px;
-            position: relative;
-        }
-
-        .raid-section[data-raid="armoche"] { border-top-color: #3b82f6; }
-        .raid-section[data-raid="kazeros"] { border-top-color: #ef4444; }
-        .raid-section[data-raid="serca"] { border-top-color: #a855f7; }
-        .raid-section[data-raid="cathedral"] { border-top-color: #eab308; }
-
-        .raid-title {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0 0 25px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .parties-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 20px;
-        }
-
-        .party-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .party-card.completed {
-            border-color: rgba(16, 185, 129, 0.5);
-            background: rgba(16, 185, 129, 0.05);
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
-        }
-
-        .party-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px dashed var(--card-border);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-        }
-
-        .party-title {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-gold);
-        }
-
-        .member-list {
-            list-style: none;
-            padding: 0;
-            margin: 0 0 10px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            flex-grow: 1;
-        }
-
-        .member-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255,255,255,0.02);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: grab;
-            user-select: none;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .member-item:active { cursor: grabbing; }
-        
-        .member-item.drag-over {
-            border: 1px dashed var(--accent-gold);
-            background: rgba(212, 175, 55, 0.1);
-            transform: scale(1.02);
-        }
-
-        .member-item.tracker { border-left: 2px solid var(--accent-gold); }
-
-        .member-item:hover .delete-btn { opacity: 1; pointer-events: auto; }
-
-        .member-info { display: flex; align-items: center; gap: 8px; }
-        .member-name { font-weight: 600; color: #cbd5e1; }
-        .member-region { font-size: 10px; color: var(--text-muted); background: #1e1e24; padding: 2px 4px; border-radius: 4px; }
-
-        .delete-btn {
-            background: transparent;
-            color: var(--accent-red);
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            padding: 0 5px;
-        }
-        .delete-btn:hover { color: #fff; text-shadow: 0 0 5px var(--accent-red); }
-
-        .add-member-btn {
-            background: transparent;
-            border: 1px dashed var(--card-border);
-            color: var(--text-muted);
-            width: 100%;
-            padding: 8px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s;
-            margin-top: auto;
-        }
-        .add-member-btn:hover {
-            border-color: var(--accent-gold);
-            color: var(--accent-gold);
-            background: rgba(212, 175, 55, 0.05);
-        }
-
-        .status-checkbox {
-            appearance: none;
-            -webkit-appearance: none;
-            width: 26px;
-            height: 26px;
-            background-color: transparent;
-            border: 2px solid var(--text-muted);
-            border-radius: 6px;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.2s;
-        }
-        .status-checkbox:checked {
-            background-color: var(--success-green);
-            border-color: var(--success-green);
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
-        }
-        .status-checkbox:checked::after {
-            content: '✔';
-            position: absolute;
-            color: white;
-            font-size: 16px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-weight: bold;
-        }
-
-        .loading-text {
-            text-align: center;
-            color: var(--accent-gold);
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 1.5rem;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-    </style>
-</head>
-<body>
-
-    <h1>Lost Ark <span>Static</span> Takipçisi</h1>
-
-    <div class="dashboard-controls">
-        <div class="btn-group">
-            <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
-            <button class="cloud-btn" onclick="loadDataFromCloud()">☁️ Buluttan Yenile</button>
-        </div>
-        <div id="sync-status">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
-    </div>
-
-    <div class="raid-container" id="raid-container">
-        <!-- JS tarafından doldurulacak -->
-    </div>
-
-    <script>
-        // --- SENİN CLOUDFLARE WORKER ADRESİN ---
+// --- SENİN CLOUDFLARE WORKER ADRESİN ---
         const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
         
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
@@ -327,6 +30,10 @@
                     { id: `${raid}_p6`, name: "6. Parti (Ekstra)", done: false, members: [{ name: "Buckysy", region: "CE" }, { name: "Wintergehan", region: "CE" }] }
                 ];
             });
+
+            // YENİ: Sıfırlama zamanını bulut verisine gömüyoruz
+            defaultData._lastReset = new Date().getTime();
+
             return defaultData;
         }
 
@@ -341,6 +48,7 @@
             try {
                 let response = await fetch(WORKER_URL + "/?action=load");
                 let saved = await response.text();
+                
                 if (saved && saved !== "null" && saved.trim() !== "") {
                     rosterData = JSON.parse(saved);
                 } else {
@@ -352,14 +60,19 @@
                 document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin.";
                 return;
             }
-            checkWeeklyReset();
+            
+            await checkWeeklyReset(); // YENİ RESET KONTROLÜ
             renderUI();
+            
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 3000);
         }
 
         async function saveDataToCloud() {
             try {
+                // Her ihtimale karşı reset zamanı yoksa ekleyelim
+                if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
+
                 await fetch(WORKER_URL + "/?action=save", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -371,7 +84,7 @@
             }
         }
 
-        // Haftalık Sıfırlama Mantığı
+        // Haftalık Çarşamba Sıfırlama Mantığı
         function getLastResetTimestamp() {
             let now = new Date();
             let resetDate = new Date(now);
@@ -384,14 +97,13 @@
         }
 
         async function checkWeeklyReset() {
-            const lastReset = localStorage.getItem('cloudLastResetTime');
             const recentWedTime = getLastResetTimestamp();
-            if (!lastReset || parseInt(lastReset) < recentWedTime) {
+            
+            // ARTIK KONTROLÜ LOCALSTORAGE YERİNE BULUTTAN GELEN VERİDEN YAPIYORUZ
+            if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 rosterData = initDefaultData(); 
                 await saveDataToCloud();
-                localStorage.setItem('cloudLastResetTime', new Date().getTime()); 
-                console.log("Haftalık sıfırlama yapıldı.");
-                renderUI();
+                console.log("Haftalık bulut sıfırlaması yapıldı.");
             }
         }
 
@@ -399,7 +111,6 @@
         // SÜRÜKLE & BIRAK (DRAG & DROP)
         // ---------------------------------------------------
         function dragStart(ev, raid, pIndex, mIndex) {
-            // Sürüklenen karakterin adresini kaydediyoruz
             const data = JSON.stringify({ raid, pIndex, mIndex });
             ev.dataTransfer.setData("text/plain", data);
             ev.dataTransfer.effectAllowed = "move";
@@ -422,16 +133,13 @@
             if (!data) return;
 
             const source = JSON.parse(data);
-            
-            // Eğer aynı karakteri kendi üzerine bıraktıysa hiçbir şey yapma
             if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
 
-            // Karakterleri Takas Et (Swap)
             const tempMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
             rosterData[source.raid][source.pIndex].members[source.mIndex] = rosterData[targetRaid][targetPIndex].members[targetMIndex];
             rosterData[targetRaid][targetPIndex].members[targetMIndex] = tempMember;
 
-            renderUI(); // Ekranı anında güncelle
+            renderUI(); 
             document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
             await saveDataToCloud();
             document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
@@ -456,9 +164,7 @@
                 return;
             }
 
-            // Uygunsa partiye ekle
             rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE" });
-            
             renderUI();
             document.getElementById('sync-status').innerText = "☁️ Yeni karakter buluta kaydediliyor...";
             await saveDataToCloud();
@@ -499,50 +205,52 @@
                 let grid = document.createElement('div');
                 grid.className = 'parties-grid';
 
-                rosterData[raid].forEach((party, pIndex) => {
-                    let card = document.createElement('div');
-                    card.className = `party-card ${party.done ? 'completed' : ''}`;
+                // Buluttan gelen veri arrayleri bazen bozulursa hata vermesin diye kontrol ediyoruz
+                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                    rosterData[raid].forEach((party, pIndex) => {
+                        let card = document.createElement('div');
+                        card.className = `party-card ${party.done ? 'completed' : ''}`;
 
-                    let cardHTML = `
-                        <div class="party-header">
-                            <span class="party-title">${party.name}</span>
-                            <input type="checkbox" class="status-checkbox" 
-                                ${party.done ? 'checked' : ''} 
-                                onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
-                        </div>
-                        <ul class="member-list">
-                    `;
-
-                    party.members.forEach((member, mIndex) => {
-                        let isTracker = bigleRoster.includes(member.name.toLowerCase());
-                        
-                        // Drag&Drop Eventleri HTML içine gömülüyor
-                        cardHTML += `
-                            <li class="member-item ${isTracker ? 'tracker' : ''}" 
-                                title="Takaslamak için sürükleyin${isTracker ? ' (API Gözlemcisi)' : ''}"
-                                draggable="true"
-                                ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})"
-                                ondragover="dragOver(event)"
-                                ondragleave="dragLeave(event)"
-                                ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
-                                
-                                <div class="member-info">
-                                    <span class="member-name">${member.name}</span>
-                                    <span class="member-region">${member.region}</span>
-                                </div>
-                                <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
-                            </li>
+                        let cardHTML = `
+                            <div class="party-header">
+                                <span class="party-title">${party.name}</span>
+                                <input type="checkbox" class="status-checkbox" 
+                                    ${party.done ? 'checked' : ''} 
+                                    onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
+                            </div>
+                            <ul class="member-list">
                         `;
-                    });
 
-                    cardHTML += `</ul>`;
-                    
-                    // Ekle Butonu
-                    cardHTML += `<button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>`;
-                    
-                    card.innerHTML = cardHTML;
-                    grid.appendChild(card);
-                });
+                        if (party.members && Array.isArray(party.members)) {
+                            party.members.forEach((member, mIndex) => {
+                                let isTracker = bigleRoster.includes(member.name.toLowerCase());
+                                
+                                cardHTML += `
+                                    <li class="member-item ${isTracker ? 'tracker' : ''}" 
+                                        title="Takaslamak için sürükleyin${isTracker ? ' (API Gözlemcisi)' : ''}"
+                                        draggable="true"
+                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})"
+                                        ondragover="dragOver(event)"
+                                        ondragleave="dragLeave(event)"
+                                        ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
+                                        
+                                        <div class="member-info">
+                                            <span class="member-name">${member.name}</span>
+                                            <span class="member-region">${member.region}</span>
+                                        </div>
+                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
+                                    </li>
+                                `;
+                            });
+                        }
+
+                        cardHTML += `</ul>`;
+                        cardHTML += `<button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>`;
+                        
+                        card.innerHTML = cardHTML;
+                        grid.appendChild(card);
+                    });
+                }
 
                 section.appendChild(grid);
                 container.appendChild(section);
@@ -568,14 +276,16 @@
 
             let fetchQueue = [];
             raidList.forEach(raid => {
-                rosterData[raid].forEach((party, pIndex) => {
-                    if (!party.done) {
-                        let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
-                        if (tracker) {
-                            fetchQueue.push({ raid, pIndex, partyName: party.name, tracker });
+                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                    rosterData[raid].forEach((party, pIndex) => {
+                        if (!party.done) {
+                            let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
+                            if (tracker) {
+                                fetchQueue.push({ raid, pIndex, partyName: party.name, tracker });
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
 
             if (fetchQueue.length === 0) {
@@ -664,7 +374,3 @@
 
         // --- BAŞLATMA (Buluttan Çekerek) ---
         loadDataFromCloud();
-
-    </script>
-</body>
-</html>
