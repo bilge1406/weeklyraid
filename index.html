@@ -229,6 +229,7 @@
         .member-info { display: flex; align-items: center; gap: 8px; }
         .member-name { font-weight: 600; color: #cbd5e1; }
         .member-region { font-size: 10px; color: var(--text-muted); background: #1e1e24; padding: 2px 4px; border-radius: 4px; }
+        .member-gs { font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-left: 5px;}
 
         .delete-btn {
             background: transparent;
@@ -335,8 +336,7 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        <!-- JS tarafından doldurulacak -->
-    </div>
+        </div>
 
     <script>
         // --- SENİN CLOUDFLARE WORKER ADRESİN ---
@@ -348,35 +348,52 @@
         // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
 
+        // STATİK KARAKTERLERİN BİLİNEN GEARSCORE'LARI
+        const KNOWN_GS = {
+            "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
+            "aelathea": 1737.5, "anilessa": 1724, "laithwen": 1717.5, "zeradorpala": 1710,
+            "holysissy": 1724, "artissy": 1720, "boisy": 1715, "buckysy": 1704
+        };
+
+        // Karakter objesi oluşturma yardımcısı (GS'yi otomatik çeker)
+        function createMember(name) {
+            return { name: name, region: "CE", gs: KNOWN_GS[name.toLowerCase()] || 0 };
+        }
+
         function initDefaultData() {
             let defaultData = {};
             
-            const threeManRaids = ["armoche", "kazeros"];
-            threeManRaids.forEach(raid => {
-                defaultData[raid] = [
-                    { id: `${raid}_p1`, name: "1. Parti", done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Holysissy", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
-                    { id: `${raid}_p2`, name: "2. Parti", done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Artissy", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
-                    { id: `${raid}_p3`, name: "3. Parti", done: false, members: [{ name: "Laithwen", region: "CE" }, { name: "Boisy", region: "CE" }, { name: "Ayibogangehan", region: "CE" }] },
-                    { id: `${raid}_p4`, name: "4. Parti", done: false, members: [{ name: "Zeradorpala", region: "CE" }, { name: "Buckysy", region: "CE" }, { name: "Orakgehan", region: "CE" }] }
-                ];
-            });
-
-            defaultData["serca"] = [
-                { id: `serca_p1`, name: "1. Parti", done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
-                { id: `serca_p2`, name: "2. Parti", done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
-                { id: `serca_p3`, name: "3. Parti", done: false, members: [{ name: "Holysissy", region: "CE" }, { name: "Ayibogangehan", region: "CE" }] },
-                { id: `serca_p4`, name: "4. Parti", done: false, members: [{ name: "Artissy", region: "CE" }, { name: "Orakgehan", region: "CE" }] },
-                { id: `serca_p5`, name: "5. Parti (Ekstra)", done: false, members: [{ name: "Boisy", region: "CE" }, { name: "Jihyogehan", region: "CE" }] },
-                { id: `serca_p6`, name: "6. Parti (Ekstra)", done: false, members: [{ name: "Buckysy", region: "CE" }, { name: "Wintergehan", region: "CE" }] }
+            defaultData["armoche"] = [
+                { id: `armoche_p1`, name: "1. Parti", done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
+                { id: `armoche_p2`, name: "2. Parti", done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
+                { id: `armoche_p3`, name: "3. Parti", done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
+                { id: `armoche_p4`, name: "4. Parti", done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
             ];
 
+            defaultData["kazeros"] = [
+                { id: `kazeros_p1`, name: "1. Parti", done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
+                { id: `kazeros_p2`, name: "2. Parti", done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
+                { id: `kazeros_p3`, name: "3. Parti", done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
+                { id: `kazeros_p4`, name: "4. Parti", done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
+            ];
+
+            defaultData["serca"] = [
+                { id: `serca_p1`, name: "1. Parti", done: false, members: [createMember("Aelathea"), createMember("Dancergehan")] },
+                { id: `serca_p2`, name: "2. Parti", done: false, members: [createMember("Anilessa"), createMember("Boksorgehan")] },
+                { id: `serca_p3`, name: "3. Parti", done: false, members: [createMember("Holysissy"), createMember("Ayibogangehan")] },
+                { id: `serca_p4`, name: "4. Parti", done: false, members: [createMember("Artissy"), createMember("Orakgehan")] },
+                { id: `serca_p5`, name: "5. Parti (Ekstra)", done: false, members: [createMember("Boisy"), createMember("Jihyogehan")] },
+                { id: `serca_p6`, name: "6. Parti (Ekstra)", done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
+            ];
+
+            // CATHEDRAL DÜZELTİLDİ: Jihyogehan (1723) HM'ye alındı, Dancergehan (1716) NM'ye düştü
             defaultData["cathedral"] = [
-                { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
-                { id: `cathedral_p2`, name: "2. Parti (HM)", reqGS: 1720, done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
-                { id: `cathedral_p3`, name: "3. Parti (NM)", reqGS: 1700, done: false, members: [{ name: "Holysissy", region: "CE" }, { name: "Ayibogangehan", region: "CE" }] },
-                { id: `cathedral_p4`, name: "4. Parti (NM)", reqGS: 1700, done: false, members: [{ name: "Artissy", region: "CE" }, { name: "Orakgehan", region: "CE" }] },
-                { id: `cathedral_p5`, name: "5. Parti (NM)", reqGS: 1700, done: false, members: [{ name: "Boisy", region: "CE" }, { name: "Jihyogehan", region: "CE" }] },
-                { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [{ name: "Buckysy", region: "CE" }, { name: "Wintergehan", region: "CE" }] }
+                { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Jihyogehan")] },
+                { id: `cathedral_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Dancergehan")] },
+                { id: `cathedral_p3`, name: "3. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Holysissy"), createMember("Boksorgehan")] },
+                { id: `cathedral_p4`, name: "4. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Artissy"), createMember("Ayibogangehan")] },
+                { id: `cathedral_p5`, name: "5. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Boisy"), createMember("Orakgehan")] },
+                { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
 
             defaultData._lastReset = new Date().getTime();
@@ -452,7 +469,7 @@
         }
 
         // ---------------------------------------------------
-        // SÜRÜKLE & BIRAK (DRAG & DROP)
+        // SÜRÜKLE & BIRAK (DRAG & DROP) GS KONTROLLÜ
         // ---------------------------------------------------
         function dragStart(ev, raid, pIndex, mIndex) {
             const data = JSON.stringify({ raid, pIndex, mIndex });
@@ -473,9 +490,29 @@
             const source = JSON.parse(data);
             if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
 
-            const tempMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
-            rosterData[source.raid][source.pIndex].members[source.mIndex] = rosterData[targetRaid][targetPIndex].members[targetMIndex];
-            rosterData[targetRaid][targetPIndex].members[targetMIndex] = tempMember;
+            const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
+            const targetMember = rosterData[targetRaid][targetPIndex].members[targetMIndex];
+
+            const sourcePartyReq = rosterData[source.raid][source.pIndex].reqGS || MIN_GS[source.raid];
+            const targetPartyReq = rosterData[targetRaid][targetPIndex].reqGS || MIN_GS[targetRaid];
+
+            // Karakterin GS'si sistemde kayıtlı değilse KNOWN_GS sözlüğünden çek
+            const sGS = sourceMember.gs || KNOWN_GS[sourceMember.name.toLowerCase()] || 0;
+            const tGS = targetMember.gs || KNOWN_GS[targetMember.name.toLowerCase()] || 0;
+
+            if (sGS < targetPartyReq) {
+                alert(`⚠️ TAKAS İPTAL: "${sourceMember.name}" karakterinin GS'si (${sGS}), hedef partinin sınırını (${targetPartyReq}) karşılamıyor!`);
+                return;
+            }
+
+            if (tGS < sourcePartyReq) {
+                alert(`⚠️ TAKAS İPTAL: "${targetMember.name}" karakterinin GS'si (${tGS}), hedef partinin sınırını (${sourcePartyReq}) karşılamıyor!`);
+                return;
+            }
+
+            // GS Sorunu yoksa takasla
+            rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember;
+            rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
 
             renderUI(); 
             document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
@@ -542,7 +579,7 @@
                 return;
             }
 
-            rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE" });
+            rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE", gs: gs });
             renderUI();
             document.getElementById('sync-status').innerText = "☁️ Yeni karakter buluta kaydediliyor...";
             await saveDataToCloud();
@@ -604,6 +641,7 @@
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
                                 let isTracker = bigleRoster.includes(member.name.toLowerCase());
+                                let displayGS = member.gs || KNOWN_GS[member.name.toLowerCase()] || "";
                                 
                                 cardHTML += `
                                     <li class="member-item ${isTracker ? 'tracker' : ''}" 
@@ -616,6 +654,7 @@
                                         
                                         <div class="member-info">
                                             <span class="member-name">${member.name}</span>
+                                            ${displayGS ? `<span class="member-gs">[${displayGS}]</span>` : ''}
                                             <span class="member-region">${member.region}</span>
                                         </div>
                                         <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
@@ -634,7 +673,6 @@
 
                 section.appendChild(grid);
                 
-                // YENİ: Parti Ekleme Butonu (Gridin Altında)
                 let addPartyBtn = document.createElement('button');
                 addPartyBtn.className = 'add-party-btn';
                 addPartyBtn.innerText = `+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle`;
