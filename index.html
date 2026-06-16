@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -60,22 +60,37 @@
             max-width: 600px;
         }
 
-        .sync-btn {
-            background: linear-gradient(135deg, var(--accent-red), #9f1239);
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .sync-btn, .cloud-btn {
             color: white;
             border: none;
-            padding: 12px 24px;
+            padding: 12px 20px;
             font-family: 'Rajdhani', sans-serif;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 700;
             letter-spacing: 1px;
             border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
             text-transform: uppercase;
-            width: 100%;
+            flex: 1;
+        }
+
+        .sync-btn {
+            background: linear-gradient(135deg, var(--accent-red), #9f1239);
         }
         .sync-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4); }
+
+        .cloud-btn {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            flex: 0.5;
+        }
+        .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
 
         #sync-status {
             font-size: 14px;
@@ -133,7 +148,6 @@
             transition: all 0.3s;
         }
 
-        /* Parti Tamamlandığında Kartın Görünümü */
         .party-card.completed {
             border-color: rgba(16, 185, 129, 0.5);
             background: rgba(16, 185, 129, 0.05);
@@ -175,7 +189,6 @@
             font-size: 14px;
         }
 
-        /* Gözlemci karakteri (Bigle roster) hafif vurgulamak istersen */
         .member-item.tracker {
             border-left: 2px solid var(--accent-gold);
         }
@@ -212,6 +225,20 @@
             transform: translate(-50%, -50%);
             font-weight: bold;
         }
+
+        .loading-text {
+            text-align: center;
+            color: var(--accent-gold);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.5rem;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body>
@@ -219,108 +246,45 @@
     <h1>Lost Ark <span>Static</span> Takipçisi</h1>
 
     <div class="dashboard-controls">
-        <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
+        <div class="btn-group">
+            <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
+            <button class="cloud-btn" onclick="loadDataFromCloud()">☁️ Buluttan Yenile</button>
+        </div>
         <div id="sync-status">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
     </div>
 
     <div class="raid-container" id="raid-container">
-        <!-- JS tarafından doldurulacak -->
-    </div>
+        </div>
 
     <script>
-        // Bigle Roster: (Sistem log aramalarını SADECE bu karakterler üzerinden yapacak)
-        const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
+        // --- SENİN CLOUDFLARE WORKER ADRESİN ---
+        const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
         
+        const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
         function initDefaultData() {
             let defaultData = {};
             
-            // 1. DİĞER RAİDLER: Armoche ve Kazeros (3 Kişilik Partiler)
             const threeManRaids = ["armoche", "kazeros"];
             threeManRaids.forEach(raid => {
                 defaultData[raid] = [
-                    { 
-                        id: `${raid}_p1`, name: "1. Parti", done: false,
-                        members: [
-                            { name: "Aelathea", region: "CE" },
-                            { name: "Holysissy", region: "CE" },
-                            { name: "Dancergehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p2`, name: "2. Parti", done: false,
-                        members: [
-                            { name: "Anilessa", region: "CE" },
-                            { name: "Artissy", region: "CE" },
-                            { name: "Boksorgehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p3`, name: "3. Parti", done: false,
-                        members: [
-                            { name: "Laithwen", region: "CE" },
-                            { name: "Boisy", region: "CE" },
-                            { name: "Ayibogangehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p4`, name: "4. Parti", done: false,
-                        members: [
-                            { name: "Zeradorpala", region: "CE" },
-                            { name: "Buckysy", region: "CE" },
-                            { name: "Orakgehan", region: "CE" } // Tracker
-                        ]
-                    }
+                    { id: `${raid}_p1`, name: "1. Parti", done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Holysissy", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
+                    { id: `${raid}_p2`, name: "2. Parti", done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Artissy", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
+                    { id: `${raid}_p3`, name: "3. Parti", done: false, members: [{ name: "Laithwen", region: "CE" }, { name: "Boisy", region: "CE" }, { name: "Ayibogangehan", region: "CE" }] },
+                    { id: `${raid}_p4`, name: "4. Parti", done: false, members: [{ name: "Zeradorpala", region: "CE" }, { name: "Buckysy", region: "CE" }, { name: "Orakgehan", region: "CE" }] }
                 ];
             });
 
-            // 2. SERCA VE CATHEDRAL ÖZEL: 2 Kişilik Partiler (Toplam 6 Parti - 2 Aelathea, 4 Holysissy)
             const twoManRaids = ["serca", "cathedral"];
             twoManRaids.forEach(raid => {
                 defaultData[raid] = [
-                    { 
-                        id: `${raid}_p1`, name: "1. Parti", done: false,
-                        members: [
-                            { name: "Aelathea", region: "CE" },
-                            { name: "Dancergehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p2`, name: "2. Parti", done: false,
-                        members: [
-                            { name: "Anilessa", region: "CE" },
-                            { name: "Boksorgehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p3`, name: "3. Parti", done: false,
-                        members: [
-                            { name: "Holysissy", region: "CE" },
-                            { name: "Ayibogangehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p4`, name: "4. Parti", done: false,
-                        members: [
-                            { name: "Artissy", region: "CE" },
-                            { name: "Orakgehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p5`, name: "5. Parti (Ekstra)", done: false,
-                        members: [
-                            { name: "Boisy", region: "CE" },
-                            { name: "Jihyogehan", region: "CE" } // Tracker
-                        ]
-                    },
-                    { 
-                        id: `${raid}_p6`, name: "6. Parti (Ekstra)", done: false,
-                        members: [
-                            { name: "Buckysy", region: "CE" },
-                            { name: "Wintergehan", region: "CE" } // Tracker
-                        ]
-                    }
+                    { id: `${raid}_p1`, name: "1. Parti", done: false, members: [{ name: "Aelathea", region: "CE" }, { name: "Dancergehan", region: "CE" }] },
+                    { id: `${raid}_p2`, name: "2. Parti", done: false, members: [{ name: "Anilessa", region: "CE" }, { name: "Boksorgehan", region: "CE" }] },
+                    { id: `${raid}_p3`, name: "3. Parti", done: false, members: [{ name: "Holysissy", region: "CE" }, { name: "Ayibogangehan", region: "CE" }] },
+                    { id: `${raid}_p4`, name: "4. Parti", done: false, members: [{ name: "Artissy", region: "CE" }, { name: "Orakgehan", region: "CE" }] },
+                    { id: `${raid}_p5`, name: "5. Parti (Ekstra)", done: false, members: [{ name: "Boisy", region: "CE" }, { name: "Jihyogehan", region: "CE" }] },
+                    { id: `${raid}_p6`, name: "6. Parti (Ekstra)", done: false, members: [{ name: "Buckysy", region: "CE" }, { name: "Wintergehan", region: "CE" }] }
                 ];
             });
 
@@ -329,19 +293,48 @@
 
         let rosterData = {};
 
-        function loadData() {
-            // Önbellek çakışmasını önlemek için sürümü V4 olarak güncelledik
-            let saved = localStorage.getItem('lostArkStaticTrackerV4');
-            if (saved) {
-                rosterData = JSON.parse(saved);
-            } else {
-                rosterData = initDefaultData();
-                saveData();
+        // ---------------------------------------------------
+        // BULUT VERİTABANI İŞLEMLERİ (CLOUD KV)
+        // ---------------------------------------------------
+        async function loadDataFromCloud() {
+            const container = document.getElementById('raid-container');
+            container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
+            
+            try {
+                // Worker'dan JSON verisini çek
+                let response = await fetch(WORKER_URL + "/?action=load");
+                let saved = await response.text();
+
+                if (saved && saved !== "null" && saved.trim() !== "") {
+                    rosterData = JSON.parse(saved);
+                } else {
+                    // Bulut boşsa varsayılanı yükle ve buluta yaz
+                    rosterData = initDefaultData();
+                    await saveDataToCloud();
+                }
+            } catch (error) {
+                console.error("Buluttan veri çekilemedi:", error);
+                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin.";
+                return;
             }
+
+            checkWeeklyReset();
+            renderUI();
+            document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 3000);
         }
 
-        function saveData() {
-            localStorage.setItem('lostArkStaticTrackerV4', JSON.stringify(rosterData));
+        async function saveDataToCloud() {
+            try {
+                await fetch(WORKER_URL + "/?action=save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(rosterData)
+                });
+            } catch (error) {
+                console.error("Buluta kaydedilemedi:", error);
+                document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
+            }
         }
 
         // Haftalık Çarşamba Sıfırlaması
@@ -356,15 +349,17 @@
             return resetDate.getTime();
         }
 
-        function checkWeeklyReset() {
-            const lastReset = localStorage.getItem('staticLastResetTimeV4');
+        async function checkWeeklyReset() {
+            // LocalStorage'ı sadece zaman kontrolü için kullanıyoruz, veri bulutta.
+            const lastReset = localStorage.getItem('cloudLastResetTime');
             const recentWedTime = getLastResetTimestamp();
 
             if (!lastReset || parseInt(lastReset) < recentWedTime) {
                 rosterData = initDefaultData(); 
-                saveData();
-                localStorage.setItem('staticLastResetTimeV4', new Date().getTime()); 
-                console.log("Haftalık sıfırlama yapıldı.");
+                await saveDataToCloud();
+                localStorage.setItem('cloudLastResetTime', new Date().getTime()); 
+                console.log("Haftalık sıfırlama yapıldı ve buluta yazıldı.");
+                renderUI();
             }
         }
 
@@ -422,7 +417,6 @@
                     });
 
                     cardHTML += `</ul>`;
-                    
                     card.innerHTML = cardHTML;
                     grid.appendChild(card);
                 });
@@ -432,27 +426,28 @@
             });
         }
 
-        // Tik işaretlendiğinde sadece Parti durumunu değiştir
-        function togglePartyStatus(raid, pIndex, isChecked) {
+        // Tik işaretlendiğinde durumu değiştir ve BULUTA KAYDET
+        async function togglePartyStatus(raid, pIndex, isChecked) {
             rosterData[raid][pIndex].done = isChecked;
-            saveData();
-            renderUI(); 
+            renderUI(); // Ekranı hemen güncelle
+            document.getElementById('sync-status').innerText = "☁️ Buluta kaydediliyor...";
+            await saveDataToCloud(); // Arka planda buluta gönder
+            document.getElementById('sync-status').innerText = "✅ Buluta kaydedildi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
         // ---------------------------------------------------
-        // YENİ NESİL CLOUDFLARE WORKER API SENKRONİZASYONU
+        // API SENKRONİZASYONU
         // ---------------------------------------------------
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
             const lastResetTime = getLastResetTimestamp();
             let updatedCount = 0;
 
-            // Sadece bitmemiş partileri ve içindeki Gözlemciyi (Bigle karakterini) bulalım
             let fetchQueue = [];
             raidList.forEach(raid => {
                 rosterData[raid].forEach((party, pIndex) => {
                     if (!party.done) {
-                        // Partideki Bigle karakterini bul
                         let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
                         if (tracker) {
                             fetchQueue.push({ raid, pIndex, partyName: party.name, tracker });
@@ -475,11 +470,11 @@
                 let task = fetchQueue[i];
                 let char = task.tracker;
                 
-                statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) -> Gözlemci: ${char.name} [${i+1}/${fetchQueue.length}]`;
+                statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
                 statusText.style.color = "var(--accent-gold)";
 
                 let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`;
-                let proxyUrl = `https://lostarkproxy.bilgehangulseven.workers.dev/?url=${encodeURIComponent(targetUrl)}`;
+                let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
 
                 let success = false;
                 let retryCount = 0;
@@ -500,9 +495,7 @@
                                 let bossName = match[1].toLowerCase();
                                 let killTime = parseInt(match[2]);
 
-                                // Eğer bu log haftalık reseti geçmişse VE aradığımız raid ismi logda geçiyorsa
                                 if (killTime > lastResetTime && bossName.includes(task.raid)) {
-                                    // Bütün partiyi bitmiş olarak işaretle
                                     rosterData[task.raid][task.pIndex].done = true;
                                     updatedCount++;
                                     break; 
@@ -513,7 +506,7 @@
                     } catch (error) {
                         if (error.message === "429_RATE_LIMIT") {
                             retryCount++;
-                            statusText.innerText = `⚠️ 429 Hızı Aşıldı. 5sn mola... (${char.name})`;
+                            statusText.innerText = `⚠️ 429 Hızı Aşıldı. 5sn mola...`;
                             await new Promise(resolve => setTimeout(resolve, 5000));
                         } else {
                             console.error("Fetch Hatası:", error);
@@ -523,11 +516,15 @@
                 }
 
                 if (success) {
-                    saveData();
                     renderUI(); 
                 }
-
                 await new Promise(resolve => setTimeout(resolve, 2500));
+            }
+
+            // Taramalar bitince topluca buluta kaydet
+            if (updatedCount > 0) {
+                statusText.innerText = "☁️ Yeni tamamlanan raidler buluta kaydediliyor...";
+                await saveDataToCloud();
             }
 
             syncBtn.disabled = false;
@@ -544,10 +541,8 @@
             }, 6000);
         }
 
-        // --- BAŞLATMA ---
-        loadData();
-        checkWeeklyReset();
-        renderUI();
+        // --- BAŞLATMA (Buluttan Çekerek) ---
+        loadDataFromCloud();
 
     </script>
 </body>
