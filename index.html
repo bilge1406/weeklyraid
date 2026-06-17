@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -146,7 +146,14 @@
 
         .party-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 10px; margin-bottom: 15px; }
         .party-header-left { display: flex; align-items: center; gap: 10px; }
-        .party-title { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--accent-gold); }
+        
+        .party-title { font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; font-weight: 700; color: var(--accent-gold); display: flex; align-items: center;}
+        
+        /* ZORLUK ROZETLERİ (YENİ) */
+        .diff-badge { font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: 0.5px;}
+        .diff-nm { background: rgba(51, 65, 85, 0.4); color: #cbd5e1; border: 1px solid #475569; }
+        .diff-hm { background: rgba(127, 29, 29, 0.4); color: #fca5a5; border: 1px solid #991b1b; }
+        .diff-nmr { background: rgba(76, 29, 149, 0.4); color: #c4b5fd; border: 1px solid #5b21b6; }
 
         .delete-party-btn { background: transparent; color: var(--text-muted); border: none; font-size: 16px; cursor: pointer; transition: color 0.2s; padding: 0; }
         .delete-party-btn:hover { color: var(--accent-red); text-shadow: 0 0 5px rgba(225, 29, 72, 0.5); }
@@ -198,7 +205,7 @@
         }
         .modal-box-small { max-width: 400px; }
         .modal-box-large { max-width: 1400px; height: 90vh; }
-        .modal-box-medium { max-width: 800px; height: 80vh; } /* Raw JSON Modal için */
+        .modal-box-medium { max-width: 800px; height: 80vh; } 
 
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
@@ -262,7 +269,10 @@
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
             <p style="margin:0; font-size: 14px; color: var(--text-muted); text-align: center;">Ekleyeceğiniz yeni parti için zorluk seviyesini seçin.</p>
-            <select class="modal-select" id="difficultySelect"></select>
+            
+            <select class="modal-select" id="difficultySelect">
+                </select>
+
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" onclick="closePartyModal()">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddParty()">Oluştur</button>
@@ -307,19 +317,11 @@
     </div>
 
     <script>
-        // --- SENİN CLOUDFLARE WORKER ADRESİN ---
+        // --- CLOUDFLARE WORKER ADRESİ ---
         const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
         
-        const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // ÖZEL ROSTER GRUPLANDIRMALARI (Admin Paneli İçin)
-        const ROSTERS = {
-            "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
-            "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
-            "Esin Roster": ["holysissy", "artissy", "boisy", "buckysy"]
-        };
-
         const RAID_DIFFICULTIES = {
             "armoche": { "NM": 1700, "HM": 1720 },
             "kazeros": { "NM": 1710, "HM": 1730 },
@@ -340,33 +342,40 @@
         function initDefaultData() {
             let defaultData = {};
             defaultData["armoche"] = [
-                { id: `armoche_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
-                { id: `armoche_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
-                { id: `armoche_p3`, name: "3. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
-                { id: `armoche_p4`, name: "4. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
+                { id: `armoche_p1`, name: "1. Parti", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
+                { id: `armoche_p2`, name: "2. Parti", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
+                { id: `armoche_p3`, name: "3. Parti", reqGS: 1700, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
+                { id: `armoche_p4`, name: "4. Parti", reqGS: 1700, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
             ];
             defaultData["kazeros"] = [
-                { id: `kazeros_p1`, name: "1. Parti (HM)", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
-                { id: `kazeros_p2`, name: "2. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
-                { id: `kazeros_p3`, name: "3. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
-                { id: `kazeros_p4`, name: "4. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
+                { id: `kazeros_p1`, name: "1. Parti", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
+                { id: `kazeros_p2`, name: "2. Parti", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
+                { id: `kazeros_p3`, name: "3. Parti", reqGS: 1710, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
+                { id: `kazeros_p4`, name: "4. Parti", reqGS: 1710, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
             ];
             defaultData["serca"] = [
-                { id: `serca_p1`, name: "1. Parti (HM)", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Dancergehan")] },
-                { id: `serca_p2`, name: "2. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Boksorgehan")] },
-                { id: `serca_p3`, name: "3. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Holysissy"), createMember("Ayibogangehan")] },
-                { id: `serca_p4`, name: "4. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Artissy"), createMember("Orakgehan")] },
-                { id: `serca_p5`, name: "5. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Boisy"), createMember("Jihyogehan")] },
-                { id: `serca_p6`, name: "6. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
+                { id: `serca_p1`, name: "1. Parti", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Dancergehan")] },
+                { id: `serca_p2`, name: "2. Parti", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Boksorgehan")] },
+                { id: `serca_p3`, name: "3. Parti", reqGS: 1710, done: false, members: [createMember("Holysissy"), createMember("Ayibogangehan")] },
+                { id: `serca_p4`, name: "4. Parti", reqGS: 1710, done: false, members: [createMember("Artissy"), createMember("Orakgehan")] },
+                { id: `serca_p5`, name: "5. Parti", reqGS: 1710, done: false, members: [createMember("Boisy"), createMember("Jihyogehan")] },
+                { id: `serca_p6`, name: "6. Parti", reqGS: 1710, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
             defaultData["cathedral"] = [
-                { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Jihyogehan")] },
-                { id: `cathedral_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Dancergehan")] },
-                { id: `cathedral_p3`, name: "3. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Holysissy"), createMember("Boksorgehan")] },
-                { id: `cathedral_p4`, name: "4. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Artissy"), createMember("Ayibogangehan")] },
-                { id: `cathedral_p5`, name: "5. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Boisy"), createMember("Orakgehan")] },
-                { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
+                { id: `cathedral_p1`, name: "1. Parti", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Jihyogehan")] },
+                { id: `cathedral_p2`, name: "2. Parti", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Dancergehan")] },
+                { id: `cathedral_p3`, name: "3. Parti", reqGS: 1700, done: false, members: [createMember("Holysissy"), createMember("Boksorgehan")] },
+                { id: `cathedral_p4`, name: "4. Parti", reqGS: 1700, done: false, members: [createMember("Artissy"), createMember("Ayibogangehan")] },
+                { id: `cathedral_p5`, name: "5. Parti", reqGS: 1700, done: false, members: [createMember("Boisy"), createMember("Orakgehan")] },
+                { id: `cathedral_p6`, name: "6. Parti", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
+            
+            defaultData.customRosters = {
+                "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
+                "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
+                "Esin Roster": ["holysissy", "artissy", "boisy", "buckysy"]
+            };
+            
             defaultData.customGS = {};
             defaultData._lastReset = new Date().getTime();
             return defaultData;
@@ -382,16 +391,25 @@
             const container = document.getElementById('raid-container');
             container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
             try {
-                let response = await fetch(WORKER_URL + "/?action=load");
+                let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
                 let saved = await response.text();
-                if (saved && saved !== "null" && saved.trim() !== "") { rosterData = JSON.parse(saved); } 
+                
+                if (saved && saved !== "null" && saved.trim() !== "") { 
+                    rosterData = JSON.parse(saved); 
+                    if(!rosterData.customRosters) {
+                        rosterData.customRosters = initDefaultData().customRosters;
+                        saveDataToCloud();
+                    }
+                } 
                 else { rosterData = initDefaultData(); await saveDataToCloud(); }
             } catch (error) {
                 console.error("Buluttan veri çekilemedi:", error);
                 document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin."; return;
             }
+            
             await checkWeeklyReset(); 
             renderUI();
+            
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
@@ -400,11 +418,14 @@
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
                 if (!rosterData.customGS) rosterData.customGS = {};
+                if (!rosterData.customRosters) rosterData.customRosters = initDefaultData().customRosters;
+
                 await fetch(WORKER_URL + "/?action=save", {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(rosterData)
                 });
             } catch (error) {
+                console.error("Buluta kaydedilemedi:", error);
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
             }
         }
@@ -421,31 +442,57 @@
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 let savedCustomGS = rosterData.customGS || {}; 
+                let savedRosters = rosterData.customRosters || initDefaultData().customRosters;
                 rosterData = initDefaultData(); 
-                rosterData.customGS = savedCustomGS; 
+                rosterData.customGS = savedCustomGS;
+                rosterData.customRosters = savedRosters;
                 await saveDataToCloud();
             }
         }
 
-        async function editCharacterGS(charName, currentGS) {
-            const newGSStr = prompt(`"${charName}" karakterinin güncel Gearscore'unu girin:`, currentGS || "");
-            if (!newGSStr) return;
-            const newGS = parseFloat(newGSStr);
-            if (isNaN(newGS)) { alert("⚠️ Lütfen geçerli bir sayı girin!"); return; }
-
-            if (!rosterData.customGS) rosterData.customGS = {};
-            rosterData.customGS[charName.toLowerCase()] = newGS;
-
+        // ---------------------------------------------------
+        // AKILLI HARMANLAMA İLE TİKLEME (RACE CONDITION FIX)
+        // ---------------------------------------------------
+        async function togglePartyStatus(raid, pIndex, isChecked) {
+            // Kullanıcıya anında hissettirmek için UI'ı hemen güncelle
+            rosterData[raid][pIndex].done = isChecked; 
             renderUI(); 
-            // Eğer Admin paneli açıksa, oradaki Roster listesini ve Tabloyu da anında güncelle
-            if (document.getElementById('adminModal').style.display === 'flex') {
-                renderAdminTable();
-                renderAdminRosters();
-            }
+            document.getElementById('sync-status').innerText = "☁️ Senkronize ediliyor...";
 
-            document.getElementById('sync-status').innerText = "☁️ Yeni Gearscore buluta kaydediliyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
+            try { 
+                // 1. Önce buluttaki güncel veriyi gizlice çek (Arkadaşın bir şey tiklediyse ezip silmemek için)
+                let res = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
+                let text = await res.text();
+                
+                if (text && text !== "null") {
+                    let freshData = JSON.parse(text);
+                    
+                    // 2. Kendi attığımız yeni tiki o taze verinin üstüne işle
+                    let pId = rosterData[raid][pIndex].id;
+                    let targetParty = freshData[raid].find(p => p.id === pId);
+                    
+                    if (targetParty) targetParty.done = isChecked;
+                    else if (freshData[raid][pIndex]) freshData[raid][pIndex].done = isChecked; // Yedek
+                    
+                    // Roster ve GS yedeklerini koru
+                    if (!freshData.customRosters) freshData.customRosters = rosterData.customRosters;
+                    if (!freshData.customGS) freshData.customGS = rosterData.customGS;
+                    
+                    // 3. Harmanlanmış veriyi bizim lokal veri yap
+                    rosterData = freshData;
+                }
+                
+                // 4. Harmanlanmış (arkadaşının tikleri + senin tiklerin) veriyi buluta yaz
+                await saveDataToCloud(); 
+                renderUI(); // Arkadaşının arka planda yaptığı değişiklikler de ekrana yansısın
+                document.getElementById('sync-status').innerText = "✅ Başarıyla senkronize edildi.";
+            } catch(e) {
+                console.error("Senkronizasyon hatası:", e);
+                // Başarısız olursa tiki geri al
+                rosterData[raid][pIndex].done = !isChecked; 
+                renderUI();
+                document.getElementById('sync-status').innerText = "⚠️ İşlem Başarısız!";
+            }
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
@@ -464,6 +511,7 @@
         }
         function dragOver(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
+        
         async function drop(ev, targetRaid, targetPIndex, targetMIndex) {
             ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
             const data = ev.dataTransfer.getData("text/plain"); if (!data) return;
@@ -486,8 +534,15 @@
 
             renderUI(); 
             document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
+            try {
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
+            } catch (e) {
+                // Hata olursa geri al
+                rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember;
+                rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember;
+                renderUI();
+            }
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
@@ -511,15 +566,18 @@
             if (!activeModalRaid) return;
             const raid = activeModalRaid; const diff = document.getElementById('difficultySelect').value;
             const reqGS = RAID_DIFFICULTIES[raid][diff]; const currentPartyCount = rosterData[raid].length;
-            rosterData[raid].push({ id: `${raid}_p_${Date.now()}`, name: `${currentPartyCount + 1}. Parti (${diff})`, reqGS: reqGS, done: false, members: [] });
-            closePartyModal(); renderUI(); await saveDataToCloud();
+            rosterData[raid].push({ id: `${raid}_p_${Date.now()}`, name: `${currentPartyCount + 1}. Parti`, reqGS: reqGS, done: false, members: [] });
+            closePartyModal(); renderUI(); 
+            try { await saveDataToCloud(); } catch(e){}
         }
 
         async function removeParty(raid, pIndex, partyName) {
-            if (confirm(`⚠️ DİKKAT: "${partyName}" adlı partiyi silmek istediğinize emin misiniz?`)) {
+            if (confirm(`⚠️ DİKKAT: Bu partiyi silmek istediğinize emin misiniz?`)) {
                 rosterData[raid].splice(pIndex, 1);
+                // İsimleri yeniden sırala
                 rosterData[raid].forEach((p, idx) => { p.name = p.name.replace(/^\d+\./, `${idx + 1}.`); });
-                renderUI(); await saveDataToCloud();
+                renderUI(); 
+                try { await saveDataToCloud(); } catch(e){}
             }
         }
 
@@ -530,25 +588,27 @@
             if (isNaN(gs) || gs < partyReqGS) { alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), bu parti için yetersiz!\nMinimum GS gereksinimi: ${partyReqGS}`); return; }
             if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[charName.toLowerCase()] = gs;
             rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE", gs: gs });
-            renderUI(); await saveDataToCloud();
+            renderUI(); 
+            try { await saveDataToCloud(); } catch(e){}
         }
 
         async function removeCharacter(raid, pIndex, mIndex, charName) {
             if (confirm(`"${charName}" karakterini bu partiden silmek istediğinize emin misiniz?`)) {
-                rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); await saveDataToCloud();
+                rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); 
+                try { await saveDataToCloud(); } catch(e){}
             }
-        }
-
-        async function togglePartyStatus(raid, pIndex, isChecked) {
-            rosterData[raid][pIndex].done = isChecked; renderUI(); await saveDataToCloud(); 
         }
 
         // ---------------------------------------------------
         // UI OLUŞTURMA (RENDER MAIN PAGE)
         // ---------------------------------------------------
         function renderUI() {
-            const container = document.getElementById('raid-container'); container.innerHTML = '';
+            const container = document.getElementById('raid-container'); 
+            container.innerHTML = '';
+            
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
+            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
+
             raidList.forEach(raid => {
                 let section = document.createElement('div'); section.className = 'raid-section'; section.setAttribute('data-raid', raid);
                 let title = document.createElement('h2'); title.className = 'raid-title'; title.innerText = raidDisplayNames[raid]; section.appendChild(title);
@@ -556,11 +616,21 @@
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                     rosterData[raid].forEach((party, pIndex) => {
                         let card = document.createElement('div'); card.className = `party-card ${party.done ? 'completed' : ''}`;
+                        
+                        // ZORLUK ROZETİ (BADGE) HESAPLAMA SİSTEMİ
+                        let reqGS = party.reqGS || MIN_GS[raid];
+                        let diffLabel = "NM";
+                        if (RAID_DIFFICULTIES[raid]["NMR"] && reqGS >= RAID_DIFFICULTIES[raid]["NMR"]) diffLabel = "NMR";
+                        else if (reqGS >= RAID_DIFFICULTIES[raid]["HM"]) diffLabel = "HM";
+
+                        // Partinin ismindeki eski manuel "(HM)", "(NM)" yazılarını silip temizle
+                        let cleanName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
+
                         let cardHTML = `
                             <div class="party-header">
                                 <div class="party-header-left">
-                                    <span class="party-title">${party.name}</span>
-                                    <button class="delete-party-btn" onclick="removeParty('${raid}', ${pIndex}, '${party.name}')" title="Partiyi Komple Sil">🗑️</button>
+                                    <span class="party-title">${cleanName} <span class="diff-badge diff-${diffLabel.toLowerCase()}">${diffLabel}</span></span>
+                                    <button class="delete-party-btn" onclick="removeParty('${raid}', ${pIndex}, '${cleanName}')" title="Partiyi Komple Sil">🗑️</button>
                                 </div>
                                 <input type="checkbox" class="status-checkbox" ${party.done ? 'checked' : ''} onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)">
                             </div>
@@ -568,7 +638,7 @@
                         `;
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
-                                let isTracker = bigleRoster.includes(member.name.toLowerCase());
+                                let isTracker = trackers.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
                                 cardHTML += `
                                     <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
@@ -595,7 +665,7 @@
         }
 
         // ---------------------------------------------------
-        // ADMIN PANELI (TEK SAYFA ENTEGRASYONU)
+        // ADMIN PANELI VE ROSTER YÖNETİMİ
         // ---------------------------------------------------
         function openAdminModal() {
             const pass = prompt("Admin Şifresini Girin:");
@@ -614,9 +684,16 @@
                     rosterData[raid].forEach(party => {
                         let memberString = party.members.map(m => `${m.name} (${getActualGS(m.name, m.gs)})`).join(", ");
                         let statusHtml = party.done ? `<span class="status-done">Bitti</span>` : `<span class="status-wait">Bekliyor</span>`;
+                        
+                        let reqGS = party.reqGS || MIN_GS[raid];
+                        let diffLabel = "NM";
+                        if (RAID_DIFFICULTIES[raid]["NMR"] && reqGS >= RAID_DIFFICULTIES[raid]["NMR"]) diffLabel = "NMR";
+                        else if (reqGS >= RAID_DIFFICULTIES[raid]["HM"]) diffLabel = "HM";
+                        let cleanName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
+
                         html += `<tr>
                                     <td style="text-transform: uppercase; font-weight:bold;">${raid}</td>
-                                    <td>${party.name}</td>
+                                    <td>${cleanName} <span class="diff-badge diff-${diffLabel.toLowerCase()}">${diffLabel}</span></td>
                                     <td>${party.reqGS || "-"}</td>
                                     <td>${memberString || "<em>Boş</em>"}</td>
                                     <td>${statusHtml}</td>
@@ -629,25 +706,26 @@
         }
 
         function renderAdminRosters() {
+            if (!rosterData.customRosters) return;
             let html = '';
-            for (const [rosterName, members] of Object.entries(ROSTERS)) {
+            for (const [rosterName, members] of Object.entries(rosterData.customRosters)) {
                 html += `
                 <div class="roster-group">
                     <h4>${rosterName}</h4>
                     <div class="roster-grid">`;
-                
                 members.forEach(member => {
                     let actualGS = getActualGS(member, KNOWN_GS[member] || 0);
-                    // İsimlerin baş harfini büyüt
                     let displayName = member.charAt(0).toUpperCase() + member.slice(1);
                     html += `
                         <div class="roster-member">
-                            <span>${displayName}</span>
+                            <span style="display:flex; align-items:center;">
+                                ${displayName} 
+                                <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')" title="Karakteri Gruptan Sil">✖</button>
+                            </span>
                             <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})" title="GS Düzenle">[${actualGS}]</span>
                         </div>`;
                 });
-                
-                html += `</div></div>`;
+                html += `</div><button class="add-roster-char-btn" onclick="addRosterCharacter('${rosterName}')">+ ${rosterName}'a Karakter Ekle</button></div>`;
             }
             document.getElementById('admin-rosters-container').innerHTML = html;
         }
@@ -656,7 +734,6 @@
             document.getElementById('admin-json-editor').value = JSON.stringify(rosterData, null, 4);
             document.getElementById('rawJsonModal').style.display = 'flex';
         }
-
         function closeRawJsonModal() { document.getElementById('rawJsonModal').style.display = 'none'; }
 
         async function saveRawJsonData() {
@@ -668,8 +745,7 @@
                 if (document.getElementById('adminModal').style.display === 'flex') {
                     renderAdminTable(); renderAdminRosters();
                 }
-                
-                document.getElementById('sync-status').innerText = "☁️ Admin değişiklikleri kaydediliyor...";
+                document.getElementById('sync-status').innerText = "☁ ...Admin değişiklikleri kaydediliyor...";
                 await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
                 closeRawJsonModal();
                 document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
@@ -680,33 +756,36 @@
         }
 
         // ---------------------------------------------------
-        // API LOG SENKRONİZASYONU
+        // API LOG SENKRONİZASYONU (AKILLI HARMANLAMA EKLENDİ)
         // ---------------------------------------------------
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
+            statusText.innerText = "⏳ API Taraması başlatılıyor...";
+            statusText.style.color = "var(--accent-gold)";
+            
             const lastResetTime = getLastResetTimestamp();
-            let updatedCount = 0; let fetchQueue = [];
+            let newTicks = []; // API'nin bulduğu yeni tamamlamalar
+            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
+            let fetchQueue = [];
             
             raidList.forEach(raid => {
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                     rosterData[raid].forEach((party, pIndex) => {
                         if (!party.done) {
-                            let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
-                            if (tracker) { fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
+                            let tracker = party.members.find(m => trackers.includes(m.name.toLowerCase()));
+                            if (tracker) { fetchQueue.push({ raid, pIndex, partyName: party.name, pId: party.id, tracker }); }
                         }
                     });
                 }
             });
 
             if (fetchQueue.length === 0) { statusText.innerText = "✅ Bütün partiler zaten tamamlanmış!"; statusText.style.color = "var(--success-green)"; return; }
-
             const syncBtn = document.querySelector('.sync-btn'); syncBtn.disabled = true; syncBtn.style.opacity = "0.5";
 
             for (let i = 0; i < fetchQueue.length; i++) {
                 let task = fetchQueue[i]; let char = task.tracker;
-                statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
-                statusText.style.color = "var(--accent-gold)";
-
+                statusText.innerText = `⏳ Taranıyor: ${task.partyName.replace(/\s*\((NM|HM|NMR)\)/i, '')} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
+                
                 let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`;
                 let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
                 let success = false; let retryCount = 0;
@@ -723,7 +802,8 @@
                             while ((match = regex.exec(pageText)) !== null) {
                                 let bossName = match[1].toLowerCase(); let killTime = parseInt(match[2]);
                                 if (killTime > lastResetTime && bossName.includes(task.raid)) {
-                                    rosterData[task.raid][task.pIndex].done = true; updatedCount++; break; 
+                                    newTicks.push(task); // Yeni tiki hafızaya al
+                                    break; 
                                 }
                             }
                             success = true; 
@@ -733,12 +813,35 @@
                         else { break; }
                     }
                 }
-                if (success) { renderUI(); } await new Promise(resolve => setTimeout(resolve, 2500));
+                await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
-            if (updatedCount > 0) { statusText.innerText = "☁️ Kaydediliyor..."; await saveDataToCloud(); }
+            // TARAMA BİTTİ -> Şimdi buluttaki en son veriyi çekip, üzerine yeni bulduğumuz tikleri akıllıca ekleyelim (Merge)
+            if (newTicks.length > 0) { 
+                statusText.innerText = "☁ ...Yeni tamamlanan raidler bulutla harmanlanıyor..."; 
+                try { 
+                    let res = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
+                    let text = await res.text();
+                    if (text && text !== "null") {
+                        let freshData = JSON.parse(text);
+                        // Yeni bulunan tikleri taze verinin üstüne işaretle
+                        newTicks.forEach(tick => {
+                            let target = freshData[tick.raid].find(p => p.id === tick.pId);
+                            if (target) target.done = true;
+                        });
+                        
+                        // Harmanlanmış veriyi bizim lokal veri yap
+                        if (!freshData.customRosters) freshData.customRosters = rosterData.customRosters;
+                        if (!freshData.customGS) freshData.customGS = rosterData.customGS;
+                        rosterData = freshData;
+                    }
+                    await saveDataToCloud(); 
+                    renderUI(); // Güncellenmiş harmanlanmış tabloyu çiz
+                } catch(e){} 
+            }
+            
             syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
-            statusText.innerText = updatedCount > 0 ? `✅ Tarama bitti! ${updatedCount} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
+            statusText.innerText = newTicks.length > 0 ? `✅ Tarama bitti! ${newTicks.length} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
             setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 6000);
         }
 
