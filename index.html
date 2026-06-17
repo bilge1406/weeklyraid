@@ -69,7 +69,7 @@
             justify-content: center;
         }
 
-        .sync-btn, .cloud-btn, .admin-btn {
+        .sync-btn, .cloud-btn, .admin-btn, .gs-btn {
             color: white;
             border: none;
             padding: 12px 20px;
@@ -88,6 +88,10 @@
 
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
+
+        /* YENİ: Otomatik GS Butonu */
+        .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
+        .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
 
         .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
@@ -206,6 +210,7 @@
     <div class="dashboard-controls">
         <div class="btn-group">
             <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
+            <button class="gs-btn" onclick="autoUpdateAllGS()">🚀 Tüm GS'leri Otomatik Güncelle</button>
             <button class="cloud-btn" onclick="loadDataFromCloud()">☁️ Buluttan Yenile</button>
             <button class="admin-btn" onclick="openAdminModal()">⚙️ Admin</button>
         </div>
@@ -334,7 +339,7 @@
 
         let rosterData = {};
         let activeModalRaid = ""; 
-        let collapsedRaids = {}; // QoL 5: Raids daraltma durumu hafızası
+        let collapsedRaids = {};
 
         async function fetchCloudData() {
             try {
@@ -523,10 +528,8 @@
             }
         }
 
-        // QoL 5: Raidi Daralt / Genişlet Toggle
         function toggleRaidCollapse(raid) {
-            collapsedRaids[raid] = !collapsedRaids[raid];
-            renderUI();
+            collapsedRaids[raid] = !collapsedRaids[raid]; renderUI();
         }
 
         function renderUI() {
@@ -542,7 +545,6 @@
                 let completedParties = rosterData[raid] ? rosterData[raid].filter(p => p.done).length : 0;
                 let progressPct = totalParties === 0 ? 0 : (completedParties / totalParties) * 100;
                 
-                // QoL 5: Eğer raid içindeki tüm partiler bitmişse otomatik olarak daralt (kullanıcı daha önce manuel açmadıysa)
                 if (typeof collapsedRaids[raid] === 'undefined') {
                     collapsedRaids[raid] = (totalParties > 0 && completedParties === totalParties);
                 }
@@ -552,7 +554,6 @@
                 section.className = 'raid-section'; 
                 section.setAttribute('data-raid', raid);
 
-                // QoL 5: Progress Bar ve Tıklanabilir Başlık Eklendi
                 let headerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 20px;" onclick="toggleRaidCollapse('${raid}')">
                         <div style="display: flex; align-items: center; gap: 15px;">
@@ -684,6 +685,86 @@
                 await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
                 document.getElementById('rawJsonModal').style.display = 'none'; document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
             } catch (e) { alert("HATA: JSON formatı bozuk!"); }
+        }
+
+        // QoL 4: Tüm GS'leri Otomatik Güncelleme Fonksiyonu
+        async function autoUpdateAllGS() {
+            const statusText = document.getElementById('sync-status');
+            statusText.innerText = "⏳ Tüm karakterlerin GS bilgileri çekiliyor...";
+            statusText.style.color = "var(--accent-gold)";
+            
+            // Tüm benzersiz karakterleri ve bölgelerini topla
+            let charsToUpdate = {}; 
+            raidList.forEach(raid => {
+                if (rosterData[raid]) {
+                    rosterData[raid].forEach(party => {
+                        party.members.forEach(m => { charsToUpdate[m.name.toLowerCase()] = m.region || "CE"; });
+                    });
+                }
+            });
+            if (rosterData.customRosters) {
+                Object.values(rosterData.customRosters).forEach(members => {
+                    members.forEach(mName => { if (!charsToUpdate[mName.toLowerCase()]) charsToUpdate[mName.toLowerCase()] = "CE"; });
+                });
+            }
+
+            let charKeys = Object.keys(charsToUpdate);
+            if (charKeys.length === 0) return;
+
+            const btn = document.querySelector('.gs-btn');
+            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
+
+            let updatedCount = 0;
+            
+            for (let i = 0; i < charKeys.length; i++) {
+                let cName = charKeys[i];
+                let cRegion = charsToUpdate[cName];
+                statusText.innerText = `⏳ GS Güncelleniyor: ${cName} [${i+1}/${charKeys.length}]`;
+                
+                let targetUrl = `https://lostark.bible/character/${cRegion}/${cName}`;
+                let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
+                
+                try {
+                    let response = await fetch(proxyUrl);
+                    if (response.status === 429) {
+                        statusText.innerText = `⚠️ Hız limiti... 5sn mola!`;
+                        await new Promise(r => setTimeout(r, 5000));
+                        i--; // Aynı karakteri tekrar dene
+                        continue;
+                    }
+                    if (!response.ok) continue;
+                    
+                    let htmlText = await response.text();
+                    
+                    // Profile sayfasındaki GS değerini yakalamak için güvenli Regex
+                    let gsMatch = htmlText.match(/(?:Item Level|iLvl|itemLevel|itemLevelValue)[^\d]*(\d{4}(?:\.\d{1,2})?)/i) || htmlText.match(/(\d{4}\.\d{2})/);
+
+                    if (gsMatch) {
+                        let parsedGS = parseFloat(gsMatch[1] || gsMatch[0]);
+                        if (!isNaN(parsedGS) && parsedGS >= 1600 && parsedGS <= 1800) {
+                            if (!rosterData.customGS) rosterData.customGS = {};
+                            rosterData.customGS[cName] = parsedGS;
+                            updatedCount++;
+                        }
+                    }
+                } catch(e) { console.log("Hata:", e); }
+                
+                await new Promise(r => setTimeout(r, 1000)); // Hız sınırına takılmamak için 1 saniye bekle
+            }
+
+            if(updatedCount > 0) {
+                statusText.innerText = "☁️ Yeni GS değerleri buluta kaydediliyor...";
+                await saveDataToCloud();
+                renderUI();
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    renderAdminTable(); renderAdminRosters(); renderBilgeRosterAnalysis();
+                }
+            }
+
+            if(btn) { btn.disabled = false; btn.style.opacity = "1"; }
+            statusText.innerText = `✅ İşlem bitti. ${updatedCount} karakterin GS'si güncellendi.`;
+            statusText.style.color = "var(--success-green)";
+            setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 5000);
         }
 
         async function syncAllParties() {
