@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -92,56 +92,23 @@
         .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
 
-        #sync-status {
-            font-size: 14px;
-            color: var(--accent-gold);
-            font-weight: 600;
-            min-height: 20px;
-            text-align: center;
-        }
+        #sync-status { font-size: 14px; color: var(--accent-gold); font-weight: 600; min-height: 20px; text-align: center; }
 
         .raid-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 50px; }
 
         .raid-section {
-            background: rgba(20, 20, 24, 0.6);
-            border-top: 3px solid var(--card-border);
-            border-radius: 12px;
-            padding: 25px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            background: rgba(20, 20, 24, 0.6); border-top: 3px solid var(--card-border);
+            border-radius: 12px; padding: 25px; position: relative; display: flex; flex-direction: column;
         }
-
         .raid-section[data-raid="armoche"] { border-top-color: #3b82f6; }
         .raid-section[data-raid="kazeros"] { border-top-color: #ef4444; }
         .raid-section[data-raid="serca"] { border-top-color: #a855f7; }
         .raid-section[data-raid="cathedral"] { border-top-color: #eab308; }
 
-        .raid-title {
-            font-family: 'Rajdhani', sans-serif;
-            font-size: 2rem;
-            font-weight: 700;
-            margin: 0 0 25px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        .raid-title { font-family: 'Rajdhani', sans-serif; font-size: 2rem; font-weight: 700; margin: 0 0 25px 0; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 15px; }
         .parties-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 20px; }
 
-        .party-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-        }
-
+        .party-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.3s; display: flex; flex-direction: column; }
         .party-card.completed { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.05); box-shadow: 0 0 20px rgba(16, 185, 129, 0.1); }
 
         .party-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--card-border); padding-bottom: 10px; margin-bottom: 15px; }
@@ -152,11 +119,7 @@
         .delete-party-btn:hover { color: var(--accent-red); text-shadow: 0 0 5px rgba(225, 29, 72, 0.5); }
 
         .member-list { list-style: none; padding: 0; margin: 0 0 10px 0; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-
-        .member-item {
-            display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02);
-            padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: grab; user-select: none; transition: all 0.2s; border: 1px solid transparent;
-        }
+        .member-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: grab; user-select: none; transition: all 0.2s; border: 1px solid transparent; }
         .member-item:active { cursor: grabbing; }
         .member-item.drag-over { border: 1px dashed var(--accent-gold); background: rgba(212, 175, 55, 0.1); transform: scale(1.02); }
         .member-item.tracker { border-left: 2px solid var(--accent-gold); }
@@ -185,33 +148,21 @@
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
         /* --- MODAL (POP-UP) GENEL TASARIM --- */
-        .modal-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--modal-bg); backdrop-filter: blur(5px); z-index: 1000;
-            justify-content: center; align-items: center;
-        }
-        
-        .modal-box {
-            background: var(--card-bg); border: 1px solid var(--accent-gold); border-radius: 12px;
-            padding: 30px; width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.8);
-            display: flex; flex-direction: column; gap: 20px; animation: slideIn 0.3s ease-out;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--modal-bg); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: var(--card-bg); border: 1px solid var(--accent-gold); border-radius: 12px; padding: 30px; width: 90%; box-shadow: 0 15px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 20px; animation: slideIn 0.3s ease-out; }
         .modal-box-small { max-width: 400px; }
         .modal-box-large { max-width: 1400px; height: 90vh; }
-        .modal-box-medium { max-width: 800px; height: 80vh; } /* Raw JSON Modal için */
-
+        .modal-box-medium { max-width: 800px; height: 80vh; } 
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
         .modal-title { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; color: var(--accent-gold); margin: 0; text-align: center; text-transform: uppercase; }
         .modal-select { width: 100%; padding: 12px; background: #1e1e24; border: 1px solid var(--card-border); color: var(--text-main); border-radius: 6px; font-size: 1rem; font-family: 'Inter', sans-serif; cursor: pointer; outline: none; }
-        
         .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
         .modal-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.1rem; text-transform: uppercase; transition: all 0.2s; }
         .modal-btn-cancel { background: transparent; color: var(--text-muted); border: 1px solid var(--text-muted); }
         .modal-btn-cancel:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .modal-btn-confirm { background: var(--accent-gold); color: #000; }
         .modal-btn-confirm:hover { background: #eab308; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
-        
         .btn-raw { background: #3b82f6; color: white; font-size: 0.9rem; padding: 8px 15px; border-radius: 6px; cursor: pointer; border: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: all 0.2s; }
         .btn-raw:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
 
@@ -223,7 +174,6 @@
         .admin-table th, .admin-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
         .admin-table th { color: var(--accent-gold); position: sticky; top: 0; background: var(--card-bg); z-index: 1;}
         .admin-table tr:hover { background: rgba(255,255,255,0.05); }
-        
         .status-done { color: var(--success-green); font-weight: bold; }
         .status-wait { color: var(--accent-red); font-weight: bold; }
 
@@ -233,13 +183,14 @@
         .roster-group h4 { color: var(--accent-gold); margin: 0 0 10px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; text-transform: uppercase; border-bottom: 1px dashed var(--card-border); padding-bottom: 5px; }
         .roster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .roster-member { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 8px 10px; border-radius: 6px; font-size: 13px; border: 1px solid var(--card-border); }
-        .roster-member span:first-child { font-weight: 600; color: #cbd5e1; }
+        
+        /* Roster Butonları */
+        .add-roster-char-btn { width: 100%; margin-top: 10px; background: transparent; border: 1px dashed var(--card-border); color: var(--text-muted); padding: 8px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+        .add-roster-char-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(212, 175, 55, 0.05); }
+        .roster-del-btn { background: transparent; color: var(--accent-red); border: none; cursor: pointer; margin-left: 5px; opacity: 0.3; transition: all 0.2s; font-size: 12px; }
+        .roster-del-btn:hover { opacity: 1; text-shadow: 0 0 5px var(--accent-red); }
 
-        #admin-json-editor {
-            width: 100%; flex-grow: 1; background: #0a0a0c; color: #10b981; border: 1px solid var(--card-border);
-            padding: 15px; font-family: monospace; font-size: 13px; border-radius: 6px; resize: none;
-        }
-
+        #admin-json-editor { width: 100%; flex-grow: 1; background: #0a0a0c; color: #10b981; border: 1px solid var(--card-border); padding: 15px; font-family: monospace; font-size: 13px; border-radius: 6px; resize: none; }
     </style>
 </head>
 <body>
@@ -256,8 +207,10 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
+    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -270,6 +223,7 @@
         </div>
     </div>
 
+    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -281,6 +235,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -298,37 +253,28 @@
                 </div>
 
                 <div class="admin-panel-col" style="flex: 1;">
-                    <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (GS Düzenle)</h4>
+                    <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        </div>
+                        <!-- JS ile Rosterlar buraya basılacak -->
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- SENİN CLOUDFLARE WORKER ADRESİN ---
         const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
-        
-        const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // ÖZEL ROSTER GRUPLANDIRMALARI (Admin Paneli İçin)
-        const ROSTERS = {
-            "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
-            "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
-            "Esin Roster": ["holysissy", "artissy", "boisy", "buckysy"]
-        };
-
         const RAID_DIFFICULTIES = {
             "armoche": { "NM": 1700, "HM": 1720 },
             "kazeros": { "NM": 1710, "HM": 1730 },
             "serca": { "NM": 1710, "HM": 1730, "NMR": 1740 },
             "cathedral": { "NM": 1700, "HM": 1720, "NMR": 1750 }
         };
-
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
-
+        
+        // Bu sadece ilk kurulumda (veritabanı sıfırken) içeriği doldurmak için
         const KNOWN_GS = {
             "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
             "aelathea": 1737.5, "anilessa": 1724, "laithwen": 1717.5, "zeradorpala": 1710,
@@ -367,6 +313,14 @@
                 { id: `cathedral_p5`, name: "5. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Boisy"), createMember("Orakgehan")] },
                 { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
+            
+            // YENİ: Roster Grupları Bulut Veritabanına Eklendi
+            defaultData.customRosters = {
+                "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
+                "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
+                "Esin Roster": ["holysissy", "artissy", "boisy", "buckysy"]
+            };
+            
             defaultData.customGS = {};
             defaultData._lastReset = new Date().getTime();
             return defaultData;
@@ -375,23 +329,26 @@
         let rosterData = {};
         let activeModalRaid = ""; 
 
-        // ---------------------------------------------------
-        // BULUT VERİTABANI İŞLEMLERİ
-        // ---------------------------------------------------
         async function loadDataFromCloud() {
             const container = document.getElementById('raid-container');
             container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
             try {
                 let response = await fetch(WORKER_URL + "/?action=load");
                 let saved = await response.text();
-                if (saved && saved !== "null" && saved.trim() !== "") { rosterData = JSON.parse(saved); } 
+                if (saved && saved !== "null" && saved.trim() !== "") { 
+                    rosterData = JSON.parse(saved); 
+                    // Eski veritabanı yedeğinde customRosters yoksa enjekte et
+                    if(!rosterData.customRosters) {
+                        rosterData.customRosters = initDefaultData().customRosters;
+                        saveDataToCloud();
+                    }
+                } 
                 else { rosterData = initDefaultData(); await saveDataToCloud(); }
             } catch (error) {
                 console.error("Buluttan veri çekilemedi:", error);
                 document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin."; return;
             }
-            await checkWeeklyReset(); 
-            renderUI();
+            await checkWeeklyReset(); renderUI();
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
@@ -400,10 +357,8 @@
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
                 if (!rosterData.customGS) rosterData.customGS = {};
-                await fetch(WORKER_URL + "/?action=save", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(rosterData)
-                });
+                if (!rosterData.customRosters) rosterData.customRosters = initDefaultData().customRosters;
+                await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
             } catch (error) {
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
             }
@@ -421,8 +376,10 @@
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 let savedCustomGS = rosterData.customGS || {}; 
+                let savedRosters = rosterData.customRosters || initDefaultData().customRosters; 
                 rosterData = initDefaultData(); 
                 rosterData.customGS = savedCustomGS; 
+                rosterData.customRosters = savedRosters;
                 await saveDataToCloud();
             }
         }
@@ -437,12 +394,9 @@
             rosterData.customGS[charName.toLowerCase()] = newGS;
 
             renderUI(); 
-            // Eğer Admin paneli açıksa, oradaki Roster listesini ve Tabloyu da anında güncelle
             if (document.getElementById('adminModal').style.display === 'flex') {
-                renderAdminTable();
-                renderAdminRosters();
+                renderAdminTable(); renderAdminRosters();
             }
-
             document.getElementById('sync-status').innerText = "☁️ Yeni Gearscore buluta kaydediliyor...";
             await saveDataToCloud();
             document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
@@ -484,11 +438,7 @@
             rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember;
             rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
 
-            renderUI(); 
-            document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+            renderUI(); await saveDataToCloud();
         }
 
         // ---------------------------------------------------
@@ -544,11 +494,49 @@
         }
 
         // ---------------------------------------------------
+        // ROSTER YÖNETİMİ (ADMIN PANEL)
+        // ---------------------------------------------------
+        async function addRosterCharacter(rosterName) {
+            const charName = prompt(`"${rosterName}" grubuna eklenecek karakterin adını girin:`);
+            if (!charName || charName.trim() === "") return;
+            const gsStr = prompt(`"${charName}" için güncel Gearscore'u girin (Örn: 1720):`, "1700");
+            if (!gsStr) return;
+            const gs = parseFloat(gsStr);
+            if (isNaN(gs)) { alert("Geçerli bir GS girilmedi!"); return; }
+
+            if (!rosterData.customRosters) rosterData.customRosters = initDefaultData().customRosters;
+            if (!rosterData.customGS) rosterData.customGS = {};
+
+            rosterData.customRosters[rosterName].push(charName.toLowerCase());
+            rosterData.customGS[charName.toLowerCase()] = gs;
+
+            renderAdminRosters();
+            document.getElementById('sync-status').innerText = "☁️ Roster güncelleniyor...";
+            await saveDataToCloud();
+            document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+        }
+
+        async function removeRosterCharacter(rosterName, charName) {
+            if (confirm(`"${charName}" karakterini ${rosterName} grubundan kalıcı olarak silmek istediğinize emin misiniz?`)) {
+                rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
+                renderAdminRosters();
+                document.getElementById('sync-status').innerText = "☁️ Roster güncelleniyor...";
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi.";
+                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+            }
+        }
+
+        // ---------------------------------------------------
         // UI OLUŞTURMA (RENDER MAIN PAGE)
         // ---------------------------------------------------
         function renderUI() {
             const container = document.getElementById('raid-container'); container.innerHTML = '';
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
+            // API Gözlemcilerini Dinamik Yapalım
+            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
+
             raidList.forEach(raid => {
                 let section = document.createElement('div'); section.className = 'raid-section'; section.setAttribute('data-raid', raid);
                 let title = document.createElement('h2'); title.className = 'raid-title'; title.innerText = raidDisplayNames[raid]; section.appendChild(title);
@@ -568,7 +556,7 @@
                         `;
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
-                                let isTracker = bigleRoster.includes(member.name.toLowerCase());
+                                let isTracker = trackers.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
                                 cardHTML += `
                                     <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
@@ -629,8 +617,9 @@
         }
 
         function renderAdminRosters() {
+            if (!rosterData.customRosters) return;
             let html = '';
-            for (const [rosterName, members] of Object.entries(ROSTERS)) {
+            for (const [rosterName, members] of Object.entries(rosterData.customRosters)) {
                 html += `
                 <div class="roster-group">
                     <h4>${rosterName}</h4>
@@ -638,16 +627,20 @@
                 
                 members.forEach(member => {
                     let actualGS = getActualGS(member, KNOWN_GS[member] || 0);
-                    // İsimlerin baş harfini büyüt
                     let displayName = member.charAt(0).toUpperCase() + member.slice(1);
                     html += `
                         <div class="roster-member">
-                            <span>${displayName}</span>
+                            <span style="display:flex; align-items:center;">
+                                ${displayName} 
+                                <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')" title="Karakteri Gruptan Sil">✖</button>
+                            </span>
                             <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})" title="GS Düzenle">[${actualGS}]</span>
                         </div>`;
                 });
                 
-                html += `</div></div>`;
+                html += `</div>
+                <button class="add-roster-char-btn" onclick="addRosterCharacter('${rosterName}')">+ ${rosterName}'a Karakter Ekle</button>
+                </div>`;
             }
             document.getElementById('admin-rosters-container').innerHTML = html;
         }
@@ -686,12 +679,13 @@
             const statusText = document.getElementById('sync-status');
             const lastResetTime = getLastResetTimestamp();
             let updatedCount = 0; let fetchQueue = [];
+            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
             
             raidList.forEach(raid => {
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                     rosterData[raid].forEach((party, pIndex) => {
                         if (!party.done) {
-                            let tracker = party.members.find(m => bigleRoster.includes(m.name.toLowerCase()));
+                            let tracker = party.members.find(m => trackers.includes(m.name.toLowerCase()));
                             if (tracker) { fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
                         }
                     });
