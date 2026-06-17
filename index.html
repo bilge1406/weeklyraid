@@ -207,8 +207,10 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
+    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -221,6 +223,7 @@
         </div>
     </div>
 
+    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -232,6 +235,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -251,7 +255,8 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        </div>
+                        <!-- JS ile Rosterlar buraya basılacak -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -323,16 +328,14 @@
         let activeModalRaid = ""; 
 
         // ---------------------------------------------------
-        // BULUT VERİTABANI İŞLEMLERİ (KUSURSUZ SENKRON)
+        // BULUT VERİTABANI İŞLEMLERİ
         // ---------------------------------------------------
         async function loadDataFromCloud() {
             const container = document.getElementById('raid-container');
-            // Eğer admin panelindeysek veya arka planda tarama çalışıyorsa ana UI'ı sıfırlayıp rahatsız etmeyelim
-            if (container.innerHTML === '' || container.querySelector('.loading-text') === null) {
-                container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
-            }
+            container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
+            
             try {
-                // Güvenli Önbellek Kırıcı URL Taktiti (Asla CORS Hatası Vermez)
+                // Zaman damgalı önbellek kırıcı (Her zaman en günceli alır)
                 let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
                 let saved = await response.text();
                 
@@ -348,7 +351,8 @@
                 console.error("Buluttan veri çekilemedi:", error);
                 document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin."; return;
             }
-            await checkWeeklyReset(); renderUI();
+            await checkWeeklyReset(); 
+            renderUI(); // Veriler çekildikten sonra ÇİZ (Bu adım artık temiz)
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
@@ -567,10 +571,11 @@
         // ---------------------------------------------------
         function renderUI() {
             const container = document.getElementById('raid-container'); 
-            // Eğer veri çekme loading ekranı varsa orayı bozma
-            if (container.innerHTML.includes("Buluttan veriler çekiliyor")) return;
             
+            // DİKKAT: Yükleme ekranı koruması TAMAMEN KALDIRILDI!
+            // Artık veriler geldiği an eski HTML silinip üzerine anında tablolar çizilecek.
             container.innerHTML = '';
+            
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
             const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
 
@@ -603,7 +608,7 @@
                                             ${displayGS ? `<span class="member-gs" onclick="editCharacterGS('${member.name}', ${displayGS})" title="GS Düzenle">[${displayGS}]</span>` : ''}
                                             <span class="member-region">${member.region}</span>
                                         </div>
-                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, mIndex, '${member.name}')">✖</button>
+                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')">✖</button>
                                     </li>
                                 `;
                             });
@@ -710,15 +715,13 @@
         }
 
         // ---------------------------------------------------
-        // API LOG SENKRONİZASYONU (KRİTİK GÜNCELLEME)
+        // API LOG SENKRONİZASYONU
         // ---------------------------------------------------
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
             statusText.innerText = "⏳ Tarama öncesi buluttaki güncel veriler senkronize ediliyor...";
             statusText.style.color = "var(--accent-gold)";
             
-            // 🚨 EN ÖNEMLİ DÜZELTME: Taramaya basıldığı an önce buluttaki taze veriyi çekiyoruz.
-            // Böylece arkadaşının az önce attığı tikleri eski veriyle ezmemiş oluyoruz.
             await loadDataFromCloud();
 
             const lastResetTime = getLastResetTimestamp();
