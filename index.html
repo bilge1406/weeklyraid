@@ -207,8 +207,10 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
+    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -221,6 +223,7 @@
         </div>
     </div>
 
+    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -232,6 +235,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -251,7 +255,8 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        </div>
+                        <!-- JS ile Rosterlar buraya basılacak -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -323,15 +328,21 @@
         let activeModalRaid = ""; 
 
         // ---------------------------------------------------
-        // BULUT VERİTABANI İŞLEMLERİ (CACHE DÜZELTMELİ)
+        // BULUT VERİTABANI İŞLEMLERİ (CACHE KORUMALI)
         // ---------------------------------------------------
         async function loadDataFromCloud() {
             const container = document.getElementById('raid-container');
             container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
             try {
-                // Tarayıcının eski veriyi dayatmasını engellemek için nocache parametresi ve no-store eklendi
-                let response = await fetch(WORKER_URL + "/?action=load&nocache=" + new Date().getTime(), {
-                    cache: 'no-store'
+                // Tarayıcı Cache'ini %100 Aşmak İçin Eklendi
+                let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime(), {
+                    method: 'GET',
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
                 });
                 let saved = await response.text();
                 if (saved && saved !== "null" && saved.trim() !== "") { 
@@ -351,14 +362,24 @@
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
 
+        // Hata yakalamalı güçlü save metodu
         async function saveDataToCloud() {
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
                 if (!rosterData.customGS) rosterData.customGS = {};
                 if (!rosterData.customRosters) rosterData.customRosters = initDefaultData().customRosters;
-                await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
+                
+                let res = await fetch(WORKER_URL + "/?action=save", { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify(rosterData) 
+                });
+                if (!res.ok) throw new Error("HTTP " + res.status);
             } catch (error) {
+                console.error("Buluta kaydedilemedi:", error);
+                alert("⚠️ HATA: Değişiklikler buluta kaydedilemedi! Lütfen Adblock / Güvenlik Duvarı ayarlarınızı kontrol edin veya sayfayı yenileyin.");
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
+                throw error; // UI'ı geri almak için hatayı fırlat
             }
         }
 
@@ -396,8 +417,10 @@
                 renderAdminTable(); renderAdminRosters();
             }
             document.getElementById('sync-status').innerText = "☁️ Yeni Gearscore buluta kaydediliyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
+            try {
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
+            } catch (e) {}
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
@@ -433,10 +456,22 @@
             if (sGS < targetPartyReq) { alert(`⚠️ TAKAS İPTAL: "${sourceMember.name}" karakterinin GS'si (${sGS}), hedef partinin sınırını (${targetPartyReq}) karşılamıyor!`); return; }
             if (tGS < sourcePartyReq) { alert(`⚠️ TAKAS İPTAL: "${targetMember.name}" karakterinin GS'si (${tGS}), hedef partinin sınırını (${sourcePartyReq}) karşılamıyor!`); return; }
 
+            // Geçici olarak yer değiştir
             rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember;
             rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
 
-            renderUI(); await saveDataToCloud();
+            renderUI(); 
+            document.getElementById('sync-status').innerText = "☁️ Takas buluta kaydediliyor...";
+            try {
+                await saveDataToCloud();
+                document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
+            } catch (e) {
+                // Kayıt başarısızsa takası geri al
+                rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember;
+                rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember;
+                renderUI();
+            }
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
         // ---------------------------------------------------
@@ -460,14 +495,17 @@
             const raid = activeModalRaid; const diff = document.getElementById('difficultySelect').value;
             const reqGS = RAID_DIFFICULTIES[raid][diff]; const currentPartyCount = rosterData[raid].length;
             rosterData[raid].push({ id: `${raid}_p_${Date.now()}`, name: `${currentPartyCount + 1}. Parti (${diff})`, reqGS: reqGS, done: false, members: [] });
-            closePartyModal(); renderUI(); await saveDataToCloud();
+            closePartyModal(); renderUI(); 
+            document.getElementById('sync-status').innerText = "☁️ Yeni parti buluta kaydediliyor...";
+            try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Parti eklendi."; } catch(e){}
         }
 
         async function removeParty(raid, pIndex, partyName) {
             if (confirm(`⚠️ DİKKAT: "${partyName}" adlı partiyi silmek istediğinize emin misiniz?`)) {
                 rosterData[raid].splice(pIndex, 1);
                 rosterData[raid].forEach((p, idx) => { p.name = p.name.replace(/^\d+\./, `${idx + 1}.`); });
-                renderUI(); await saveDataToCloud();
+                renderUI(); 
+                try { await saveDataToCloud(); } catch(e){}
             }
         }
 
@@ -478,17 +516,30 @@
             if (isNaN(gs) || gs < partyReqGS) { alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), bu parti için yetersiz!\nMinimum GS gereksinimi: ${partyReqGS}`); return; }
             if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[charName.toLowerCase()] = gs;
             rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE", gs: gs });
-            renderUI(); await saveDataToCloud();
+            renderUI(); 
+            try { await saveDataToCloud(); } catch(e){}
         }
 
         async function removeCharacter(raid, pIndex, mIndex, charName) {
             if (confirm(`"${charName}" karakterini bu partiden silmek istediğinize emin misiniz?`)) {
-                rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); await saveDataToCloud();
+                rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); 
+                try { await saveDataToCloud(); } catch(e){}
             }
         }
 
         async function togglePartyStatus(raid, pIndex, isChecked) {
-            rosterData[raid][pIndex].done = isChecked; renderUI(); await saveDataToCloud(); 
+            rosterData[raid][pIndex].done = isChecked; 
+            renderUI(); 
+            document.getElementById('sync-status').innerText = "☁️ Buluta kaydediliyor...";
+            try { 
+                await saveDataToCloud(); 
+                document.getElementById('sync-status').innerText = "✅ Değişiklik buluta kaydedildi.";
+            } catch(e) {
+                // Kayıt başarısızsa tiki geri al
+                rosterData[raid][pIndex].done = !isChecked;
+                renderUI();
+            }
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
         // ---------------------------------------------------
@@ -510,8 +561,7 @@
 
             renderAdminRosters();
             document.getElementById('sync-status').innerText = "☁️ Roster güncelleniyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi.";
+            try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi."; } catch(e){}
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
 
@@ -520,8 +570,7 @@
                 rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
                 renderAdminRosters();
                 document.getElementById('sync-status').innerText = "☁️ Roster güncelleniyor...";
-                await saveDataToCloud();
-                document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi.";
+                try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi."; } catch(e){}
                 setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
             }
         }
@@ -610,7 +659,6 @@
                 }
             });
             html += `</table>`;
-            document.getElementById('table-container').innerHTML = html;
             document.getElementById('admin-table-container').innerHTML = html;
         }
 
@@ -728,7 +776,7 @@
                 if (success) { renderUI(); } await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
-            if (updatedCount > 0) { statusText.innerText = "☁️ Kaydediliyor..."; await saveDataToCloud(); }
+            if (updatedCount > 0) { statusText.innerText = "☁️ Kaydediliyor..."; try { await saveDataToCloud(); } catch(e){} }
             syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
             statusText.innerText = updatedCount > 0 ? `✅ Tarama bitti! ${updatedCount} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
             setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 6000);
