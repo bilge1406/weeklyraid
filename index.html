@@ -225,9 +225,14 @@
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
             <p style="margin:0; font-size: 14px; color: var(--text-muted); text-align: center;">Ekleyeceğiniz yeni parti için zorluk seviyesini seçin.</p>
-            <select class="modal-select" id="difficultySelect"></select>
+            
+            <select class="modal-select" id="difficultySelect">
+                <!-- JS ile Doldurulacak -->
+            </select>
+
             <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">İptal</button>
+                <!-- DİKKAT: İptal butonu artık sadece bu modalı kapatıyor -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('partyModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddParty()">Oluştur</button>
             </div>
         </div>
@@ -250,7 +255,8 @@
             <input type="hidden" id="modalContextRoster">
 
             <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">İptal</button>
+                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addCharModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddChar()">Ekle</button>
             </div>
         </div>
@@ -262,7 +268,8 @@
             <h3 class="modal-title">Yeni Roster Grubu</h3>
             <input type="text" id="newRosterInput" class="modal-input" placeholder="Roster Adı (Örn: Yedek Kadro)" autocomplete="off">
             <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">İptal</button>
+                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addRosterModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmNewRoster()">Oluştur</button>
             </div>
         </div>
@@ -275,7 +282,8 @@
             <input type="number" id="editGsInput" class="modal-input" placeholder="Yeni Gearscore">
             <input type="hidden" id="editGsCharName">
             <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">İptal</button>
+                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editGsModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmEditGs()">Kaydet</button>
             </div>
         </div>
@@ -286,7 +294,8 @@
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="modal-title">🛠️ Raw JSON Düzenleyici</h3>
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">Kapat</button>
+                <!-- DİKKAT: Sadece kendisini kapatır -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('rawJsonModal').style.display='none'">Kapat</button>
             </div>
             <textarea id="admin-json-editor"></textarea>
             <button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveRawJsonData()">💾 Değişiklikleri Buluta Kaydet</button>
@@ -298,10 +307,12 @@
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="modal-title">⚙️ Gelişmiş Admin Paneli</h3>
-                <button class="modal-btn modal-btn-cancel" onclick="closeAllModals()">Kapat</button>
+                <!-- DİKKAT: Admin panelini güvenle kapatır -->
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('adminModal').style.display='none'">Kapat</button>
             </div>
             
             <div class="admin-content">
+                <!-- Sol: Tablo Görünümü -->
                 <div class="admin-panel-col" style="flex: 1.2;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h4 style="margin:0; color:var(--accent-gold);">📊 Veritabanı Tablosu</h4>
@@ -310,10 +321,11 @@
                     <div id="admin-table-container">Tablo Yükleniyor...</div>
                 </div>
 
+                <!-- Sağ: Roster Yönetimi -->
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (GS Düzenle)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        <!-- JS ile Rosterlar buraya basılacak -->
+                        <!-- JS ile Doldurulacak -->
                     </div>
                 </div>
             </div>
@@ -321,7 +333,9 @@
     </div>
 
     <script>
+        // --- CLOUDFLARE WORKER ADRESİ ---
         const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
+        
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
         const RAID_DIFFICULTIES = {
@@ -330,8 +344,9 @@
             "serca": { "NM": 1710, "HM": 1730, "NMR": 1740 },
             "cathedral": { "NM": 1700, "HM": 1720, "NMR": 1750 }
         };
+
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
-        
+
         const KNOWN_GS = {
             "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
             "aelathea": 1737.5, "anilessa": 1724, "laithwen": 1717.5, "zeradorpala": 1710,
@@ -458,9 +473,6 @@
         // ---------------------------------------------------
         // YENİ MODAL (POP-UP) SİSTEMLERİ & AKILLI HAFIZA
         // ---------------------------------------------------
-        function closeAllModals() {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
-        }
 
         // Akıllı Hafıza: İsim yazıldıkça GS kontrol et
         function handleCharNameInput(val) {
@@ -533,7 +545,7 @@
                 }
                 rosterData.customGS[name.toLowerCase()] = gs;
                 
-                closeAllModals();
+                document.getElementById('addCharModal').style.display = 'none';
                 renderAdminRosters();
                 renderUI();
                 try { await saveDataToCloud(); } catch(e){}
@@ -550,7 +562,7 @@
                 rosterData.customGS[name.toLowerCase()] = gs;
                 rosterData[raid][pIndex].members.push({ name: name, region: "CE", gs: gs });
                 
-                closeAllModals();
+                document.getElementById('addCharModal').style.display = 'none';
                 renderUI(); 
                 try { await saveDataToCloud(); } catch(e){}
             }
@@ -570,7 +582,7 @@
             if(!rosterData.customRosters[rName]) {
                 rosterData.customRosters[rName] = [];
             }
-            closeAllModals();
+            document.getElementById('addRosterModal').style.display = 'none';
             renderAdminRosters();
             try { await saveDataToCloud(); } catch(e){}
         }
@@ -600,7 +612,7 @@
             if (!rosterData.customGS) rosterData.customGS = {};
             rosterData.customGS[charName.toLowerCase()] = gs;
             
-            closeAllModals();
+            document.getElementById('editGsModal').style.display = 'none';
             renderUI();
             if (document.getElementById('adminModal').style.display === 'flex') {
                 renderAdminTable(); renderAdminRosters();
@@ -699,7 +711,7 @@
             const raid = activeModalRaid; const diff = document.getElementById('difficultySelect').value;
             const reqGS = RAID_DIFFICULTIES[raid][diff]; const currentPartyCount = rosterData[raid].length;
             rosterData[raid].push({ id: `${raid}_p_${Date.now()}`, name: `${currentPartyCount + 1}. Parti`, reqGS: reqGS, done: false, members: [] });
-            closeAllModals(); renderUI(); 
+            document.getElementById('partyModal').style.display = 'none'; renderUI(); 
             document.getElementById('sync-status').innerText = "☁️ Yeni parti buluta kaydediliyor...";
             try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Parti eklendi."; } catch(e){}
         }
@@ -876,7 +888,7 @@
                 }
                 document.getElementById('sync-status').innerText = "☁ ...Admin değişiklikleri kaydediliyor...";
                 await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
-                closeAllModals();
+                document.getElementById('rawJsonModal').style.display = 'none';
                 document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
                 setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
             } catch (error) {
