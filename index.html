@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -207,10 +207,8 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        <!-- JS tarafından doldurulacak -->
-    </div>
+        </div>
 
-    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -223,7 +221,6 @@
         </div>
     </div>
 
-    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -235,7 +232,6 @@
         </div>
     </div>
 
-    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -255,8 +251,7 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        <!-- JS ile Rosterlar buraya basılacak -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -328,23 +323,19 @@
         let activeModalRaid = ""; 
 
         // ---------------------------------------------------
-        // BULUT VERİTABANI İŞLEMLERİ (CACHE KORUMALI)
+        // BULUT VERİTABANI İŞLEMLERİ (KUSURSUZ SENKRON)
         // ---------------------------------------------------
         async function loadDataFromCloud() {
             const container = document.getElementById('raid-container');
-            container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
+            // Eğer admin panelindeysek veya arka planda tarama çalışıyorsa ana UI'ı sıfırlayıp rahatsız etmeyelim
+            if (container.innerHTML === '' || container.querySelector('.loading-text') === null) {
+                container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
+            }
             try {
-                // Tarayıcı Cache'ini %100 Aşmak İçin Eklendi
-                let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime(), {
-                    method: 'GET',
-                    cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    }
-                });
+                // Güvenli Önbellek Kırıcı URL Taktiti (Asla CORS Hatası Vermez)
+                let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
                 let saved = await response.text();
+                
                 if (saved && saved !== "null" && saved.trim() !== "") { 
                     rosterData = JSON.parse(saved); 
                     if(!rosterData.customRosters) {
@@ -362,7 +353,6 @@
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
 
-        // Hata yakalamalı güçlü save metodu
         async function saveDataToCloud() {
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
@@ -377,9 +367,9 @@
                 if (!res.ok) throw new Error("HTTP " + res.status);
             } catch (error) {
                 console.error("Buluta kaydedilemedi:", error);
-                alert("⚠️ HATA: Değişiklikler buluta kaydedilemedi! Lütfen Adblock / Güvenlik Duvarı ayarlarınızı kontrol edin veya sayfayı yenileyin.");
+                alert("⚠️ HATA: Değişiklikler buluta kaydedilemedi! Lütfen bağlantınızı kontrol edin.");
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
-                throw error; // UI'ı geri almak için hatayı fırlat
+                throw error; 
             }
         }
 
@@ -456,7 +446,6 @@
             if (sGS < targetPartyReq) { alert(`⚠️ TAKAS İPTAL: "${sourceMember.name}" karakterinin GS'si (${sGS}), hedef partinin sınırını (${targetPartyReq}) karşılamıyor!`); return; }
             if (tGS < sourcePartyReq) { alert(`⚠️ TAKAS İPTAL: "${targetMember.name}" karakterinin GS'si (${tGS}), hedef partinin sınırını (${sourcePartyReq}) karşılamıyor!`); return; }
 
-            // Geçici olarak yer değiştir
             rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember;
             rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
 
@@ -466,7 +455,6 @@
                 await saveDataToCloud();
                 document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
             } catch (e) {
-                // Kayıt başarısızsa takası geri al
                 rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember;
                 rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember;
                 renderUI();
@@ -535,7 +523,6 @@
                 await saveDataToCloud(); 
                 document.getElementById('sync-status').innerText = "✅ Değişiklik buluta kaydedildi.";
             } catch(e) {
-                // Kayıt başarısızsa tiki geri al
                 rosterData[raid][pIndex].done = !isChecked;
                 renderUI();
             }
@@ -579,7 +566,11 @@
         // UI OLUŞTURMA (RENDER MAIN PAGE)
         // ---------------------------------------------------
         function renderUI() {
-            const container = document.getElementById('raid-container'); container.innerHTML = '';
+            const container = document.getElementById('raid-container'); 
+            // Eğer veri çekme loading ekranı varsa orayı bozma
+            if (container.innerHTML.includes("Buluttan veriler çekiliyor")) return;
+            
+            container.innerHTML = '';
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
             const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
 
@@ -612,7 +603,7 @@
                                             ${displayGS ? `<span class="member-gs" onclick="editCharacterGS('${member.name}', ${displayGS})" title="GS Düzenle">[${displayGS}]</span>` : ''}
                                             <span class="member-region">${member.region}</span>
                                         </div>
-                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')">✖</button>
+                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, mIndex, '${member.name}')">✖</button>
                                     </li>
                                 `;
                             });
@@ -708,7 +699,7 @@
                     renderAdminTable(); renderAdminRosters();
                 }
                 
-                document.getElementById('sync-status').innerText = "☁️ Admin değişiklikleri kaydediliyor...";
+                document.getElementById('sync-status').innerText = "☁ ...Admin değişiklikleri kaydediliyor...";
                 await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
                 closeRawJsonModal();
                 document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
@@ -719,10 +710,17 @@
         }
 
         // ---------------------------------------------------
-        // API LOG SENKRONİZASYONU
+        // API LOG SENKRONİZASYONU (KRİTİK GÜNCELLEME)
         // ---------------------------------------------------
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
+            statusText.innerText = "⏳ Tarama öncesi buluttaki güncel veriler senkronize ediliyor...";
+            statusText.style.color = "var(--accent-gold)";
+            
+            // 🚨 EN ÖNEMLİ DÜZELTME: Taramaya basıldığı an önce buluttaki taze veriyi çekiyoruz.
+            // Böylece arkadaşının az önce attığı tikleri eski veriyle ezmemiş oluyoruz.
+            await loadDataFromCloud();
+
             const lastResetTime = getLastResetTimestamp();
             let updatedCount = 0; let fetchQueue = [];
             const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
@@ -745,8 +743,7 @@
             for (let i = 0; i < fetchQueue.length; i++) {
                 let task = fetchQueue[i]; let char = task.tracker;
                 statusText.innerText = `⏳ Taranıyor: ${task.partyName} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
-                statusText.style.color = "var(--accent-gold)";
-
+                
                 let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`;
                 let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
                 let success = false; let retryCount = 0;
@@ -776,7 +773,10 @@
                 if (success) { renderUI(); } await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
-            if (updatedCount > 0) { statusText.innerText = "☁️ Kaydediliyor..."; try { await saveDataToCloud(); } catch(e){} }
+            if (updatedCount > 0) { 
+                statusText.innerText = "☁ ...Yeni tamamlanan raidler buluta işleniyor..."; 
+                try { await saveDataToCloud(); } catch(e){} 
+            }
             syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
             statusText.innerText = updatedCount > 0 ? `✅ Tarama bitti! ${updatedCount} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
             setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 6000);
