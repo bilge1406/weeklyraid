@@ -228,8 +228,24 @@
 
         .member-info { display: flex; align-items: center; gap: 8px; }
         .member-name { font-weight: 600; color: #cbd5e1; }
+        
+        /* GS (Gearscore) Tıklanabilir Tasarımı */
+        .member-gs { 
+            font-size: 11px; 
+            color: var(--accent-gold); 
+            font-weight: 600; 
+            margin-left: 5px; 
+            cursor: pointer; 
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .member-gs:hover { 
+            background: rgba(212, 175, 55, 0.2); 
+            color: #fff; 
+        }
+        
         .member-region { font-size: 10px; color: var(--text-muted); background: #1e1e24; padding: 2px 4px; border-radius: 4px; }
-        .member-gs { font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-left: 5px;}
 
         .delete-btn {
             background: transparent;
@@ -336,7 +352,8 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
     <script>
         // --- SENİN CLOUDFLARE WORKER ADRESİN ---
@@ -345,17 +362,15 @@
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // RAID MINIMUM GEARSCORE GEREKSİNİMLERİ
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
 
-        // STATİK KARAKTERLERİN BİLİNEN GEARSCORE'LARI
+        // İlk Yükleme İçin Referans Alınacak (Değişken) Gearscore'lar
         const KNOWN_GS = {
             "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
             "aelathea": 1737.5, "anilessa": 1724, "laithwen": 1717.5, "zeradorpala": 1710,
             "holysissy": 1724, "artissy": 1720, "boisy": 1715, "buckysy": 1704
         };
 
-        // Karakter objesi oluşturma yardımcısı (GS'yi otomatik çeker)
         function createMember(name) {
             return { name: name, region: "CE", gs: KNOWN_GS[name.toLowerCase()] || 0 };
         }
@@ -386,7 +401,6 @@
                 { id: `serca_p6`, name: "6. Parti (Ekstra)", done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
 
-            // CATHEDRAL DÜZELTİLDİ: Jihyogehan (1723) HM'ye alındı, Dancergehan (1716) NM'ye düştü
             defaultData["cathedral"] = [
                 { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Jihyogehan")] },
                 { id: `cathedral_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Dancergehan")] },
@@ -396,6 +410,8 @@
                 { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
 
+            // Manuel girilen GS değerlerini tutacak genel obje
+            defaultData.customGS = {};
             defaultData._lastReset = new Date().getTime();
 
             return defaultData;
@@ -435,6 +451,7 @@
         async function saveDataToCloud() {
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
+                if (!rosterData.customGS) rosterData.customGS = {};
 
                 await fetch(WORKER_URL + "/?action=save", {
                     method: "POST",
@@ -447,7 +464,7 @@
             }
         }
 
-        // Haftalık Sıfırlama Mantığı
+        // Haftalık Sıfırlama Mantığı (GS KORUMALI)
         function getLastResetTimestamp() {
             let now = new Date();
             let resetDate = new Date(now);
@@ -462,10 +479,44 @@
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
+                let savedCustomGS = rosterData.customGS || {}; // Eski GS verilerini yedekle
                 rosterData = initDefaultData(); 
+                rosterData.customGS = savedCustomGS; // Yeni haftaya eski GS'leri aktar
                 await saveDataToCloud();
-                console.log("Haftalık bulut sıfırlaması yapıldı.");
+                console.log("Haftalık bulut sıfırlaması yapıldı (Gearscorelar korundu).");
             }
+        }
+
+        // ---------------------------------------------------
+        // YENİ: DİNAMİK GEARSCORE GÜNCELLEME SİSTEMİ
+        // ---------------------------------------------------
+        async function editCharacterGS(charName, currentGS) {
+            const newGSStr = prompt(`"${charName}" karakterinin güncel Gearscore'unu girin:`, currentGS || "");
+            if (!newGSStr) return;
+
+            const newGS = parseFloat(newGSStr);
+            if (isNaN(newGS)) {
+                alert("⚠️ Lütfen geçerli bir sayı girin! (Örn: 1720 veya 1720.5)");
+                return;
+            }
+
+            // Global olarak sisteme bu karakterin yeni GS'sini kaydet
+            if (!rosterData.customGS) rosterData.customGS = {};
+            rosterData.customGS[charName.toLowerCase()] = newGS;
+
+            renderUI(); // Anında ekrana yansıt
+            document.getElementById('sync-status').innerText = "☁️ Yeni Gearscore buluta kaydediliyor...";
+            await saveDataToCloud();
+            document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
+        }
+
+        // Bir karakterin o anki geçerli GS'sini hesaplama fonksiyonu
+        function getActualGS(charName, defaultGS) {
+            if (!charName) return 0;
+            const nameLower = charName.toLowerCase();
+            // Sırasıyla: Kullanıcının girdiği taze veri -> Parti içindeki eski veri -> Hardcoded veri
+            return (rosterData.customGS && rosterData.customGS[nameLower]) || defaultGS || KNOWN_GS[nameLower] || 0;
         }
 
         // ---------------------------------------------------
@@ -496,9 +547,8 @@
             const sourcePartyReq = rosterData[source.raid][source.pIndex].reqGS || MIN_GS[source.raid];
             const targetPartyReq = rosterData[targetRaid][targetPIndex].reqGS || MIN_GS[targetRaid];
 
-            // Karakterin GS'si sistemde kayıtlı değilse KNOWN_GS sözlüğünden çek
-            const sGS = sourceMember.gs || KNOWN_GS[sourceMember.name.toLowerCase()] || 0;
-            const tGS = targetMember.gs || KNOWN_GS[targetMember.name.toLowerCase()] || 0;
+            const sGS = getActualGS(sourceMember.name, sourceMember.gs);
+            const tGS = getActualGS(targetMember.name, targetMember.gs);
 
             if (sGS < targetPartyReq) {
                 alert(`⚠️ TAKAS İPTAL: "${sourceMember.name}" karakterinin GS'si (${sGS}), hedef partinin sınırını (${targetPartyReq}) karşılamıyor!`);
@@ -510,7 +560,6 @@
                 return;
             }
 
-            // GS Sorunu yoksa takasla
             rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember;
             rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
 
@@ -522,7 +571,7 @@
         }
 
         // ---------------------------------------------------
-        // YENİ: PARTİ EKLEME & SİLME
+        // PARTİ EKLEME & SİLME
         // ---------------------------------------------------
         async function addParty(raid) {
             const partyName = prompt(`Yeni partinin adını girin (Örn: 7. Parti (Altlar)):`);
@@ -578,6 +627,10 @@
                 alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), ${limitName} için yetersiz!\nMinimum GS gereksinimi: ${reqGS}`);
                 return;
             }
+            
+            // Eğer yeni bir karakter ekleniyorsa, onun da bilgisini hafızaya ekleyelim ki her yerde aynı kalsın
+            if (!rosterData.customGS) rosterData.customGS = {};
+            rosterData.customGS[charName.toLowerCase()] = gs;
 
             rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE", gs: gs });
             renderUI();
@@ -641,7 +694,7 @@
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
                                 let isTracker = bigleRoster.includes(member.name.toLowerCase());
-                                let displayGS = member.gs || KNOWN_GS[member.name.toLowerCase()] || "";
+                                let displayGS = getActualGS(member.name, member.gs);
                                 
                                 cardHTML += `
                                     <li class="member-item ${isTracker ? 'tracker' : ''}" 
@@ -654,7 +707,7 @@
                                         
                                         <div class="member-info">
                                             <span class="member-name">${member.name}</span>
-                                            ${displayGS ? `<span class="member-gs">[${displayGS}]</span>` : ''}
+                                            ${displayGS ? `<span class="member-gs" onclick="editCharacterGS('${member.name}', ${displayGS})" title="GS Düzenlemek İçin Tıklayın">[${displayGS}]</span>` : ''}
                                             <span class="member-region">${member.region}</span>
                                         </div>
                                         <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
