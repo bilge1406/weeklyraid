@@ -200,15 +200,17 @@
     <div class="dashboard-controls">
         <div class="btn-group">
             <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
-            <button class="cloud-btn" onclick="loadDataFromCloud()">☁️ Buluttan Yenile</button>
+            <button class="cloud-btn" onclick="loadDataFromCloud(false)">☁️ Buluttan Yenile</button>
             <button class="admin-btn" onclick="openAdminModal()">⚙️ Admin</button>
         </div>
         <div id="sync-status">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
+    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -221,6 +223,7 @@
         </div>
     </div>
 
+    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -232,6 +235,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -251,7 +255,8 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        </div>
+                        <!-- JS ile Rosterlar buraya basılacak -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -323,32 +328,43 @@
         let activeModalRaid = ""; 
 
         // ---------------------------------------------------
-        // BULUT VERİTABANI İŞLEMLERİ
+        // BULUT VERİTABANI İŞLEMLERİ 
         // ---------------------------------------------------
-        async function loadDataFromCloud() {
-            const container = document.getElementById('raid-container');
-            if (container.innerHTML === '' || container.querySelector('.loading-text') === null) {
-                container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
-            }
+        
+        // Sadece arka planda buluttaki veriyi çekip geri döndüren güvenli motor
+        async function fetchCloudData() {
             try {
                 let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
-                let saved = await response.text();
-                
-                if (saved && saved !== "null" && saved.trim() !== "") { 
-                    rosterData = JSON.parse(saved); 
-                    if(!rosterData.customRosters) {
-                        rosterData.customRosters = initDefaultData().customRosters;
-                        saveDataToCloud();
-                    }
-                } 
-                else { rosterData = initDefaultData(); await saveDataToCloud(); }
-            } catch (error) {
-                console.error("Buluttan veri çekilemedi:", error);
-                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin."; return;
+                let text = await response.text();
+                if (text && text !== "null" && text.trim() !== "") {
+                    return JSON.parse(text);
+                }
+            } catch (error) { console.error("Cloud fetch hatası: ", error); }
+            return null;
+        }
+
+        async function loadDataFromCloud(isBackground = false) {
+            const container = document.getElementById('raid-container');
+            if (!isBackground) {
+                container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
             }
-            await checkWeeklyReset(); renderUI();
-            document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
+            
+            let cloudData = await fetchCloudData();
+            
+            if (cloudData) {
+                rosterData = cloudData;
+                if (!rosterData.customRosters) rosterData.customRosters = initDefaultData().customRosters;
+                if (!rosterData.customGS) rosterData.customGS = {};
+            } else {
+                rosterData = initDefaultData();
+                await saveDataToCloud();
+            }
+
+            await checkWeeklyReset(); 
+            renderUI();
+            
+            document.getElementById('sync-status').innerText = "✅ Veriler yüklendi.";
+            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 2000);
         }
 
         async function saveDataToCloud() {
@@ -365,7 +381,6 @@
                 if (!res.ok) throw new Error("HTTP " + res.status);
             } catch (error) {
                 console.error("Buluta kaydedilemedi:", error);
-                alert("⚠️ HATA: Değişiklikler buluta kaydedilemedi! Lütfen bağlantınızı kontrol edin.");
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
                 throw error; 
             }
@@ -462,52 +477,39 @@
         }
 
         // ---------------------------------------------------
-        // AKILLI BİRLEŞTİRMELİ CHECKBOX (RACE CONDITION FIX)
+        // AKILLI BİRLEŞTİRME SİSTEMİ (RACE CONDITION FIX)
         // ---------------------------------------------------
         async function togglePartyStatus(raid, pIndex, isChecked) {
-            // Kullanıcıya anında tikleme hissi ver (UI güncelle)
+            // Kullanıcıya hissettirmeden kendi ekranında anında tikle
             rosterData[raid][pIndex].done = isChecked; 
             renderUI(); 
-            document.getElementById('sync-status').innerText = "☁️ Bulut kontrol ediliyor ve kaydediliyor...";
+            document.getElementById('sync-status').innerText = "☁️ Bulutla senkronize ediliyor...";
 
             try { 
-                // 1. Buluttaki en son veriyi gizlice çek (arkadaşın bir şey yaptıysa öğrenelim)
-                let response = await fetch(WORKER_URL + "/?action=load&t=" + new Date().getTime());
-                let savedText = await response.text();
-                let latestData = JSON.parse(savedText);
-
-                // 2. Kendi lokal değişikliklerimizin üstüne, buluttan gelen yeni tikleri harmanla (Merge)
-                // (Şimdilik en kritik olan "done" yani tikleri harmanlıyoruz)
-                raidList.forEach(r => {
-                    if (latestData[r] && rosterData[r]) {
-                        latestData[r].forEach((party, idx) => {
-                            // Eğer seninkiyle aynı parti indeksiyse ve o an senin dokunduğun partiyse, senin dediğin (isChecked) geçerli olsun
-                            if (r === raid && idx === pIndex) {
-                                latestData[r][idx].done = isChecked;
-                            } 
-                            // Senin dokunmadığın diğer partilerde bulutta (arkadaşının ekranında) tik varsa, o tiki senin ekranına çek
-                            else if (rosterData[r][idx]) {
-                                latestData[r][idx].done = party.done;
-                            }
-                        });
-                    }
-                });
-
-                // 3. Harmanlanmış veriyi bizim lokal veri yap
-                rosterData = latestData;
+                // Önce buluttaki güncel versiyonu (arkadaşının son tıklamalarını) çek
+                let cloudData = await fetchCloudData();
                 
-                // 4. Harmanlanmış taze veriyi tekrar buluta yaz (Artık kimsenin verisi ezilmedi)
+                if (cloudData) {
+                    // Buluttan gelen veri üzerinden, sadece kullanıcının az önce tıkladığı tiki zorla güncelle
+                    if (cloudData[raid] && cloudData[raid][pIndex]) {
+                        cloudData[raid][pIndex].done = isChecked;
+                    }
+                    // Harmanlanmış (Merge) listeyi artık ana listemiz olarak kabul et 
+                    // (Böylece arkadaşının attığı tikler de kendi ekranımıza girmiş oldu)
+                    rosterData = cloudData;
+                }
+                
+                // Harmanlanan bu yeni listeyi tekrar buluta kaydet
                 await saveDataToCloud(); 
                 
-                // Ekranı arkadaşının değişiklikleriyle birlikte yenile
+                // Ekranı yeni liste ile tekrar çiz (arkadaşının tikleri de gözüksün)
                 renderUI();
-                document.getElementById('sync-status').innerText = "✅ Değişiklik başarıyla harmanlandı ve kaydedildi.";
+                document.getElementById('sync-status').innerText = "✅ Senkronize edildi.";
             } catch(e) {
-                console.error("Harmanlama hatası: ", e);
-                // İşlem başarısız olursa kullanıcının tikini geri al
-                rosterData[raid][pIndex].done = !isChecked;
+                console.error("Senkronize edilemedi: ", e);
+                rosterData[raid][pIndex].done = !isChecked; // Başarısız olursa tiki geri al
                 renderUI();
-                document.getElementById('sync-status').innerText = "⚠️ Kaydedilemedi!";
+                document.getElementById('sync-status').innerText = "⚠️ İşlem Kaydedilemedi!";
             }
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
         }
@@ -603,6 +605,10 @@
         // ---------------------------------------------------
         function renderUI() {
             const container = document.getElementById('raid-container'); 
+            
+            // Eğer DOM yapısı bozuk gelirse çizmeyi engelle
+            if (!rosterData || typeof rosterData !== 'object') return;
+            
             container.innerHTML = '';
             
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
@@ -751,8 +757,8 @@
             statusText.innerText = "⏳ Tarama öncesi buluttaki güncel veriler senkronize ediliyor...";
             statusText.style.color = "var(--accent-gold)";
             
-            // Tarama öncesi taze veriyi çek ki kimsenin emeği ezilmesin
-            await loadDataFromCloud();
+            // Tarama öncesi arka planda taze veriyi çek ki kimsenin emeği ezilmesin
+            await loadDataFromCloud(true);
 
             const lastResetTime = getLastResetTimestamp();
             let updatedCount = 0; let fetchQueue = [];
