@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi </title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -363,15 +363,18 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        </div>
+        <!-- JS tarafından doldurulacak -->
+    </div>
 
+    <!-- YENİ PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
             <p style="margin:0; font-size: 14px; color: var(--text-muted); text-align: center;">Ekleyeceğiniz yeni parti için zorluk seviyesini seçin.</p>
             
             <select class="modal-select" id="difficultySelect">
-                </select>
+                <!-- JS ile Doldurulacak -->
+            </select>
 
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" onclick="closeModal()">İptal</button>
@@ -387,13 +390,15 @@
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
-        // GELİŞMİŞ ZORLUK VE GS SİSTEMİ
+        // GELİŞMİŞ ZORLUK VE GS SİSTEMİ (Sadece Serca ve Cathedral'de NMR var)
         const RAID_DIFFICULTIES = {
-            "armoche": { "NM": 1700, "HM": 1720, "NMR": 1750 },
-            "kazeros": { "NM": 1710, "HM": 1730, "NMR": 1750 },
-            "serca": { "NM": 1710, "HM": 1730, "NMR": 1750 },
+            "armoche": { "NM": 1700, "HM": 1720 },
+            "kazeros": { "NM": 1710, "HM": 1730 },
+            "serca": { "NM": 1710, "HM": 1730, "NMR": 1740 },
             "cathedral": { "NM": 1700, "HM": 1720, "NMR": 1750 }
         };
+
+        const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
 
         const KNOWN_GS = {
             "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
@@ -447,7 +452,7 @@
         }
 
         let rosterData = {};
-        let activeModalRaid = ""; // Pop-up için hafıza
+        let activeModalRaid = ""; 
 
         // ---------------------------------------------------
         // BULUT VERİTABANI İŞLEMLERİ
@@ -564,7 +569,6 @@
             const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
             const targetMember = rosterData[targetRaid][targetPIndex].members[targetMIndex];
 
-            // Güvenlik: Eğer partinin reqGS'i tanımsızsa o raid'in NM seviyesini baz al.
             const sourcePartyReq = rosterData[source.raid][source.pIndex].reqGS || RAID_DIFFICULTIES[source.raid]["NM"];
             const targetPartyReq = rosterData[targetRaid][targetPIndex].reqGS || RAID_DIFFICULTIES[targetRaid]["NM"];
 
@@ -601,9 +605,9 @@
             document.getElementById('modalRaidName').innerText = `${raidDisplayNames[raid]} - Parti Ekle`;
             
             const selectBox = document.getElementById('difficultySelect');
-            selectBox.innerHTML = ''; // İçini temizle
+            selectBox.innerHTML = ''; 
             
-            // O Raid'e ait zorlukları menüye ekle
+            // O Raid'e ait zorlukları menüye ekle (Sadece RAID_DIFFICULTIES içinde tanımlı olanlar çıkar)
             for (const [diff, gs] of Object.entries(RAID_DIFFICULTIES[raid])) {
                 let option = document.createElement('option');
                 option.value = diff;
@@ -626,7 +630,6 @@
             const diff = document.getElementById('difficultySelect').value;
             const reqGS = RAID_DIFFICULTIES[raid][diff];
             
-            // Otomatik İsimlendirme (Mevcut parti sayısını bul)
             const currentPartyCount = rosterData[raid].length;
             const newPartyName = `${currentPartyCount + 1}. Parti (${diff})`;
 
@@ -638,7 +641,7 @@
                 members: []
             });
 
-            closeModal(); // Pop-up'ı kapat
+            closeModal(); 
             
             renderUI();
             document.getElementById('sync-status').innerText = "☁️ Yeni parti buluta kaydediliyor...";
@@ -651,9 +654,7 @@
             if (confirm(`⚠️ DİKKAT: "${partyName}" adlı partiyi içindeki tüm oyuncularla birlikte silmek istediğinize emin misiniz?`)) {
                 rosterData[raid].splice(pIndex, 1);
                 
-                // İsimleri yeniden sırala (1. Parti, 2. Parti vb. kaymasın diye)
                 rosterData[raid].forEach((p, idx) => {
-                    // Sadece sayıyı değiştirip eski zorluk etiketini korumak için Regex kullanıyoruz
                     p.name = p.name.replace(/^\d+\./, `${idx + 1}.`);
                 });
 
@@ -780,7 +781,6 @@
 
                 section.appendChild(grid);
                 
-                // MODAL TETİKLEYİCİ BUTON
                 let addPartyBtn = document.createElement('button');
                 addPartyBtn.className = 'add-party-btn';
                 addPartyBtn.innerText = `+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle`;
