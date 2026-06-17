@@ -181,7 +181,7 @@
         .admin-panel-col { flex: 1; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--card-border); overflow-y: auto;}
         
         .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .admin-table th, .admin-table td { padding: 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
+        .admin-table th, .admin-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
         .admin-table th { color: var(--accent-gold); position: sticky; top: 0; background: var(--card-bg); z-index: 1;}
         .admin-table tr:hover { background: rgba(255,255,255,0.05); }
         .status-done { color: var(--success-green); font-weight: bold; }
@@ -231,7 +231,6 @@
             </select>
 
             <div class="modal-buttons">
-                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('partyModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddParty()">Oluştur</button>
             </div>
@@ -255,7 +254,6 @@
             <input type="hidden" id="modalContextRoster">
 
             <div class="modal-buttons">
-                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addCharModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddChar()">Ekle</button>
             </div>
@@ -268,7 +266,6 @@
             <h3 class="modal-title">Yeni Roster Grubu</h3>
             <input type="text" id="newRosterInput" class="modal-input" placeholder="Roster Adı (Örn: Yedek Kadro)" autocomplete="off">
             <div class="modal-buttons">
-                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addRosterModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmNewRoster()">Oluştur</button>
             </div>
@@ -282,23 +279,32 @@
             <input type="number" id="editGsInput" class="modal-input" placeholder="Yeni Gearscore">
             <input type="hidden" id="editGsCharName">
             <div class="modal-buttons">
-                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editGsModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmEditGs()">Kaydet</button>
             </div>
         </div>
     </div>
 
-    <!-- RAW JSON MODALI -->
-    <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
+    <!-- MODAL 5: RAW JSON MODALI -->
+    <div class="modal-overlay" id="rawJsonModal" style="z-index: 1003;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="modal-title">🛠️ Raw JSON Düzenleyici</h3>
-                <!-- DİKKAT: Sadece kendisini kapatır -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('rawJsonModal').style.display='none'">Kapat</button>
             </div>
             <textarea id="admin-json-editor"></textarea>
             <button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveRawJsonData()">💾 Değişiklikleri Buluta Kaydet</button>
+        </div>
+    </div>
+
+    <!-- MODAL 6: DB TABLE (TÜM PARTİLER) MODALI -->
+    <div class="modal-overlay" id="dbTableModal" style="z-index: 1001;">
+        <div class="modal-box modal-box-large">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 class="modal-title">📊 Tüm Veritabanı Tablosu</h3>
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('dbTableModal').style.display='none'">Kapat</button>
+            </div>
+            <div id="admin-table-container" style="overflow-y:auto; max-height: 70vh;"></div>
         </div>
     </div>
 
@@ -307,18 +313,20 @@
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 class="modal-title">⚙️ Gelişmiş Admin Paneli</h3>
-                <!-- DİKKAT: Admin panelini güvenle kapatır -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('adminModal').style.display='none'">Kapat</button>
             </div>
             
             <div class="admin-content">
-                <!-- Sol: Tablo Görünümü -->
+                <!-- Sol: Bilge Roster Analizi -->
                 <div class="admin-panel-col" style="flex: 1.2;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h4 style="margin:0; color:var(--accent-gold);">📊 Veritabanı Tablosu</h4>
-                        <button class="btn-raw" onclick="openRawJsonModal()">🛠️ Raw JSON Aç</button>
+                        <h4 style="margin:0; color:var(--accent-gold);">📋 Bilge Roster Analizi</h4>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-raw" style="background:#10b981;" onclick="openDbTableModal()">📊 Tüm Partiler</button>
+                            <button class="btn-raw" onclick="openRawJsonModal()">🛠️ Raw JSON</button>
+                        </div>
                     </div>
-                    <div id="admin-table-container">Tablo Yükleniyor...</div>
+                    <div id="bilge-analysis-container" style="overflow-y:auto;">Tablo Yükleniyor...</div>
                 </div>
 
                 <!-- Sağ: Roster Yönetimi -->
@@ -486,7 +494,6 @@
             }
         }
 
-        // Ana sayfadan partiye karakter eklemek için pop-up aç
         function addCharacter(raid, pIndex) {
             document.getElementById('addCharTitle').innerText = "Partiye Karakter Ekle";
             document.getElementById('modalCharName').value = "";
@@ -494,7 +501,6 @@
             document.getElementById('modalCharGS').style.borderColor = "var(--card-border)";
             document.getElementById('addCharError').style.display = "none";
             
-            // Arka planda gizli hedefleri ayarla
             document.getElementById('modalContextRaid').value = raid;
             document.getElementById('modalContextParty').value = pIndex;
             document.getElementById('modalContextRoster').value = "";
@@ -503,7 +509,6 @@
             setTimeout(() => document.getElementById('modalCharName').focus(), 100);
         }
 
-        // Admin panelinden Rostera karakter eklemek için pop-up aç
         function addRosterCharacter(rosterName) {
             document.getElementById('addCharTitle').innerText = rosterName + " İçin Karakter";
             document.getElementById('modalCharName').value = "";
@@ -511,7 +516,6 @@
             document.getElementById('modalCharGS').style.borderColor = "var(--card-border)";
             document.getElementById('addCharError').style.display = "none";
             
-            // Arka planda gizli hedefleri ayarla
             document.getElementById('modalContextRaid').value = "";
             document.getElementById('modalContextParty').value = "";
             document.getElementById('modalContextRoster').value = rosterName;
@@ -520,7 +524,6 @@
             setTimeout(() => document.getElementById('modalCharName').focus(), 100);
         }
 
-        // Pop-up'tan Gelen Karakter Verisini Onayla
         async function confirmAddChar() {
             let name = document.getElementById('modalCharName').value.trim();
             let gsStr = document.getElementById('modalCharGS').value;
@@ -532,10 +535,9 @@
             if(!name) { errSpan.innerText = "Lütfen karakter adı girin!"; errSpan.style.display = "block"; return; }
             
             let gs = parseFloat(gsStr);
-            if(isNaN(gs)) { gs = getActualGS(name, 0); } // Yazılmadıysa veritabanından bulmaya çalış
+            if(isNaN(gs)) { gs = getActualGS(name, 0); }
             
             if(rosterName) { 
-                // ROSTER'A EKLEME İŞLEMİ
                 if (isNaN(gs) || gs <= 0) { errSpan.innerText = "Geçerli bir Gearscore girilmedi!"; errSpan.style.display = "block"; return; }
                 if (!rosterData.customRosters) rosterData.customRosters = {};
                 if (!rosterData.customGS) rosterData.customGS = {};
@@ -547,11 +549,11 @@
                 
                 document.getElementById('addCharModal').style.display = 'none';
                 renderAdminRosters();
+                renderBilgeRosterAnalysis(); // Admin tablosu da güncellensin
                 renderUI();
                 try { await saveDataToCloud(); } catch(e){}
             } 
             else if (raid && pIndex !== "") { 
-                // PARTİYE EKLEME İŞLEMİ
                 let partyReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
                 if (isNaN(gs) || gs < partyReqGS) { 
                     errSpan.innerText = `GS Yetersiz! Minimum gereken: ${partyReqGS}`; 
@@ -568,7 +570,6 @@
             }
         }
 
-        // Yeni Roster Grubu Ekleme
         function openNewRosterModal() {
             document.getElementById('newRosterInput').value = "";
             document.getElementById('addRosterModal').style.display = 'flex';
@@ -584,6 +585,7 @@
             }
             document.getElementById('addRosterModal').style.display = 'none';
             renderAdminRosters();
+            renderBilgeRosterAnalysis();
             try { await saveDataToCloud(); } catch(e){}
         }
 
@@ -591,11 +593,11 @@
             if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
                 delete rosterData.customRosters[rosterName];
                 renderAdminRosters();
+                renderBilgeRosterAnalysis();
                 try { await saveDataToCloud(); } catch(e){}
             }
         }
 
-        // GS Düzenleme Modalı
         function editCharacterGS(charName, currentGS) {
             document.getElementById('editGsCharName').value = charName;
             document.getElementById('editGsInput').value = currentGS || "";
@@ -615,7 +617,9 @@
             document.getElementById('editGsModal').style.display = 'none';
             renderUI();
             if (document.getElementById('adminModal').style.display === 'flex') {
-                renderAdminTable(); renderAdminRosters();
+                renderAdminTable(); 
+                renderAdminRosters();
+                renderBilgeRosterAnalysis();
             }
             try { await saveDataToCloud(); } catch(e){}
         }
@@ -656,7 +660,6 @@
                 await saveDataToCloud();
                 document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
             } catch (e) {
-                // Hata olursa geri al
                 rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember;
                 rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember;
                 renderUI();
@@ -737,6 +740,7 @@
             if (confirm(`"${charName}" karakterini ${rosterName} grubundan kalıcı olarak silmek istediğinize emin misiniz?`)) {
                 rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
                 renderAdminRosters();
+                renderBilgeRosterAnalysis();
                 document.getElementById('sync-status').innerText = "☁️ Roster güncelleniyor...";
                 try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Roster başarıyla güncellendi."; } catch(e){}
                 setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
@@ -782,7 +786,7 @@
                         `;
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
-                                let isTracker = trackers.includes(member.name.toLowerCase());
+                                let isTracker = trackers && trackers.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
                                 cardHTML += `
                                     <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
@@ -809,14 +813,69 @@
         }
 
         // ---------------------------------------------------
-        // ADMIN PANELI İŞLEMLERİ
+        // ADMIN PANELI İŞLEMLERİ (BİLGE ROSTER ANALİZİ EKLENDİ)
         // ---------------------------------------------------
         function openAdminModal() {
             const pass = prompt("Admin Şifresini Girin:");
             if (pass !== "1234") { alert("Yanlış Şifre!"); return; }
-            renderAdminTable();
             renderAdminRosters();
+            renderBilgeRosterAnalysis();
             document.getElementById('adminModal').style.display = 'flex';
+        }
+
+        function openDbTableModal() {
+            renderAdminTable();
+            document.getElementById('dbTableModal').style.display = 'flex';
+        }
+
+        // Yeni Gelişmiş Bilge Roster Analizi
+        function renderBilgeRosterAnalysis() {
+            let bilgeRoster = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : null;
+            if (!bilgeRoster || bilgeRoster.length === 0) {
+                document.getElementById('bilge-analysis-container').innerHTML = "<p style='color:var(--text-muted);'>Bilge Roster boş veya bulunamadı.</p>";
+                return;
+            }
+
+            let html = `<table class="admin-table">
+                            <tr>
+                                <th>Karakter</th>
+                                <th>Armoche</th>
+                                <th>Kazeros</th>
+                                <th>Serca</th>
+                                <th>Cathedral</th>
+                            </tr>`;
+
+            bilgeRoster.forEach(charName => {
+                let displayName = charName.charAt(0).toUpperCase() + charName.slice(1);
+                html += `<tr><td style="font-weight:bold; color:#cbd5e1; font-size:14px;">${displayName}</td>`;
+                
+                raidList.forEach(raid => {
+                    let raidStatus = `<span style="color:#475569; font-weight:600;">- Girilmedi -</span>`;
+                    
+                    if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                        for (let party of rosterData[raid]) {
+                            let isMemberHere = party.members.find(m => m.name.toLowerCase() === charName.toLowerCase());
+                            if (isMemberHere) {
+                                let pName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
+                                
+                                if (party.members.length > 1) {
+                                    // Beraber girdiklerinin listesini ipucu olarak çıkar
+                                    let others = party.members.filter(m => m.name.toLowerCase() !== charName.toLowerCase()).map(m => m.name).join(', ');
+                                    raidStatus = `<span style="color:var(--success-green); font-weight:bold; cursor:help;" title="Beraber girdiği kişiler: ${others}">Ekiple</span><br><span style="font-size:10px; color:#838392;">(${pName})</span>`;
+                                } else {
+                                    raidStatus = `<span style="color:var(--accent-gold); font-weight:bold;">Tek Başına</span><br><span style="font-size:10px; color:#838392;">(${pName})</span>`;
+                                }
+                                break; 
+                            }
+                        }
+                    }
+                    html += `<td>${raidStatus}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</table>`;
+            document.getElementById('bilge-analysis-container').innerHTML = html;
         }
 
         function renderAdminTable() {
@@ -885,7 +944,9 @@
                 rosterData = parsed; 
                 renderUI(); 
                 if (document.getElementById('adminModal').style.display === 'flex') {
-                    renderAdminTable(); renderAdminRosters();
+                    renderAdminTable(); 
+                    renderAdminRosters();
+                    renderBilgeRosterAnalysis();
                 }
                 document.getElementById('sync-status').innerText = "☁ ...Admin değişiklikleri kaydediliyor...";
                 await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
@@ -915,7 +976,7 @@
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                     rosterData[raid].forEach((party, pIndex) => {
                         if (!party.done) {
-                            let tracker = party.members.find(m => trackers.includes(m.name.toLowerCase()));
+                            let tracker = party.members.find(m => trackers && trackers.includes(m.name.toLowerCase()));
                             if (tracker) { fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
                         }
                     });
@@ -946,7 +1007,6 @@
                             while ((match = regex.exec(pageText)) !== null) {
                                 let bossName = match[1].toLowerCase(); let killTime = parseInt(match[2]);
                                 
-                                // YENİ EKLENEN KISIM: Cathedral -> Arcenos Çevirisi
                                 let searchKeyword = (task.raid === "cathedral") ? "arcenos" : task.raid;
 
                                 if (killTime > lastResetTime && bossName.includes(searchKeyword)) {
