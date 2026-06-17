@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -198,6 +198,7 @@
         }
         .modal-box-small { max-width: 400px; }
         .modal-box-large { max-width: 1400px; height: 90vh; }
+        .modal-box-medium { max-width: 800px; height: 80vh; } /* Raw JSON Modal için */
 
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         
@@ -210,6 +211,9 @@
         .modal-btn-cancel:hover { background: rgba(255,255,255,0.05); color: #fff; }
         .modal-btn-confirm { background: var(--accent-gold); color: #000; }
         .modal-btn-confirm:hover { background: #eab308; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+        
+        .btn-raw { background: #3b82f6; color: white; font-size: 0.9rem; padding: 8px 15px; border-radius: 6px; cursor: pointer; border: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: all 0.2s; }
+        .btn-raw:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
 
         /* --- ADMIN PANEL İÇERİK TASARIMI --- */
         .admin-content { display: flex; gap: 20px; height: calc(100% - 100px); overflow: hidden; }
@@ -222,6 +226,14 @@
         
         .status-done { color: var(--success-green); font-weight: bold; }
         .status-wait { color: var(--accent-red); font-weight: bold; }
+
+        /* Roster Grid Tasarımı */
+        .roster-section { display: flex; flex-direction: column; gap: 15px; }
+        .roster-group { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; }
+        .roster-group h4 { color: var(--accent-gold); margin: 0 0 10px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; text-transform: uppercase; border-bottom: 1px dashed var(--card-border); padding-bottom: 5px; }
+        .roster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .roster-member { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 8px 10px; border-radius: 6px; font-size: 13px; border: 1px solid var(--card-border); }
+        .roster-member span:first-child { font-weight: 600; color: #cbd5e1; }
 
         #admin-json-editor {
             width: 100%; flex-grow: 1; background: #0a0a0c; color: #10b981; border: 1px solid var(--card-border);
@@ -258,6 +270,17 @@
         </div>
     </div>
 
+    <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
+        <div class="modal-box modal-box-medium">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="modal-title">🛠️ Raw JSON Düzenleyici</h3>
+                <button class="modal-btn modal-btn-cancel" onclick="closeRawJsonModal()">Kapat</button>
+            </div>
+            <textarea id="admin-json-editor"></textarea>
+            <button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveRawJsonData()">💾 Değişiklikleri Buluta Kaydet</button>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -266,15 +289,18 @@
             </div>
             
             <div class="admin-content">
-                <div class="admin-panel-col" style="flex: 1.5;">
-                    <h4 style="margin:0; color:var(--accent-gold);">📊 Veritabanı Tablosu</h4>
+                <div class="admin-panel-col" style="flex: 1.2;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin:0; color:var(--accent-gold);">📊 Veritabanı Tablosu</h4>
+                        <button class="btn-raw" onclick="openRawJsonModal()">🛠️ Raw JSON Aç</button>
+                    </div>
                     <div id="admin-table-container">Tablo Yükleniyor...</div>
                 </div>
 
                 <div class="admin-panel-col" style="flex: 1;">
-                    <h4 style="margin:0; color:var(--accent-gold);">🛠️ Raw JSON Düzenleyici</h4>
-                    <textarea id="admin-json-editor"></textarea>
-                    <button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveAdminData()">💾 Değişiklikleri Buluta Kaydet</button>
+                    <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (GS Düzenle)</h4>
+                    <div id="admin-rosters-container" class="roster-section">
+                        </div>
                 </div>
             </div>
         </div>
@@ -287,6 +313,13 @@
         const bigleRoster = ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"];
         const raidList = ["armoche", "kazeros", "serca", "cathedral"];
         
+        // ÖZEL ROSTER GRUPLANDIRMALARI (Admin Paneli İçin)
+        const ROSTERS = {
+            "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
+            "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
+            "Esin Roster": ["holysissy", "artissy", "boisy", "buckysy"]
+        };
+
         const RAID_DIFFICULTIES = {
             "armoche": { "NM": 1700, "HM": 1720 },
             "kazeros": { "NM": 1710, "HM": 1730 },
@@ -302,27 +335,22 @@
             "holysissy": 1724, "artissy": 1720, "boisy": 1715, "buckysy": 1704
         };
 
-        function createMember(name) {
-            return { name: name, region: "CE", gs: KNOWN_GS[name.toLowerCase()] || 0 };
-        }
+        function createMember(name) { return { name: name, region: "CE", gs: KNOWN_GS[name.toLowerCase()] || 0 }; }
 
         function initDefaultData() {
             let defaultData = {};
-            
             defaultData["armoche"] = [
                 { id: `armoche_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
                 { id: `armoche_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
                 { id: `armoche_p3`, name: "3. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
                 { id: `armoche_p4`, name: "4. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
             ];
-
             defaultData["kazeros"] = [
                 { id: `kazeros_p1`, name: "1. Parti (HM)", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Holysissy"), createMember("Dancergehan")] },
                 { id: `kazeros_p2`, name: "2. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Artissy"), createMember("Boksorgehan")] },
                 { id: `kazeros_p3`, name: "3. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Laithwen"), createMember("Boisy"), createMember("Ayibogangehan")] },
                 { id: `kazeros_p4`, name: "4. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Zeradorpala"), createMember("Buckysy"), createMember("Orakgehan")] }
             ];
-
             defaultData["serca"] = [
                 { id: `serca_p1`, name: "1. Parti (HM)", reqGS: 1730, done: false, members: [createMember("Aelathea"), createMember("Dancergehan")] },
                 { id: `serca_p2`, name: "2. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Anilessa"), createMember("Boksorgehan")] },
@@ -331,7 +359,6 @@
                 { id: `serca_p5`, name: "5. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Boisy"), createMember("Jihyogehan")] },
                 { id: `serca_p6`, name: "6. Parti (NM)", reqGS: 1710, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
-
             defaultData["cathedral"] = [
                 { id: `cathedral_p1`, name: "1. Parti (HM)", reqGS: 1720, done: false, members: [createMember("Aelathea"), createMember("Jihyogehan")] },
                 { id: `cathedral_p2`, name: "2. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Anilessa"), createMember("Dancergehan")] },
@@ -340,10 +367,8 @@
                 { id: `cathedral_p5`, name: "5. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Boisy"), createMember("Orakgehan")] },
                 { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
-
             defaultData.customGS = {};
             defaultData._lastReset = new Date().getTime();
-
             return defaultData;
         }
 
@@ -359,22 +384,14 @@
             try {
                 let response = await fetch(WORKER_URL + "/?action=load");
                 let saved = await response.text();
-                
-                if (saved && saved !== "null" && saved.trim() !== "") {
-                    rosterData = JSON.parse(saved);
-                } else {
-                    rosterData = initDefaultData();
-                    await saveDataToCloud();
-                }
+                if (saved && saved !== "null" && saved.trim() !== "") { rosterData = JSON.parse(saved); } 
+                else { rosterData = initDefaultData(); await saveDataToCloud(); }
             } catch (error) {
                 console.error("Buluttan veri çekilemedi:", error);
-                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin.";
-                return;
+                document.getElementById('sync-status').innerText = "⚠️ Buluta bağlanılamadı. Sayfayı yenileyin."; return;
             }
-            
             await checkWeeklyReset(); 
             renderUI();
-            
             document.getElementById('sync-status').innerText = "✅ Veriler buluttan başarıyla yüklendi.";
             setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.'; }, 3000);
         }
@@ -383,24 +400,18 @@
             try {
                 if (!rosterData._lastReset) rosterData._lastReset = new Date().getTime();
                 if (!rosterData.customGS) rosterData.customGS = {};
-
                 await fetch(WORKER_URL + "/?action=save", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(rosterData)
                 });
             } catch (error) {
-                console.error("Buluta kaydedilemedi:", error);
                 document.getElementById('sync-status').innerText = "⚠️ Değişiklikler buluta kaydedilemedi!";
             }
         }
 
         function getLastResetTimestamp() {
-            let now = new Date();
-            resetDate = new Date(now);
-            resetDate.setHours(13, 0, 0, 0);
-            let day = now.getDay(); 
-            let daysToSubtract = (day >= 3) ? (day - 3) : (day + 4);
+            let now = new Date(); resetDate = new Date(now); resetDate.setHours(13, 0, 0, 0);
+            let day = now.getDay(); let daysToSubtract = (day >= 3) ? (day - 3) : (day + 4);
             if (day === 3 && now.getHours() < 13) { daysToSubtract = 7; }
             resetDate.setDate(now.getDate() - daysToSubtract);
             return resetDate.getTime();
@@ -413,21 +424,25 @@
                 rosterData = initDefaultData(); 
                 rosterData.customGS = savedCustomGS; 
                 await saveDataToCloud();
-                console.log("Haftalık bulut sıfırlaması yapıldı (GS Korumalı).");
             }
         }
 
         async function editCharacterGS(charName, currentGS) {
             const newGSStr = prompt(`"${charName}" karakterinin güncel Gearscore'unu girin:`, currentGS || "");
             if (!newGSStr) return;
-
             const newGS = parseFloat(newGSStr);
-            if (isNaN(newGS)) { alert("⚠️ Lütfen geçerli bir sayı girin! (Örn: 1720 veya 1720.5)"); return; }
+            if (isNaN(newGS)) { alert("⚠️ Lütfen geçerli bir sayı girin!"); return; }
 
             if (!rosterData.customGS) rosterData.customGS = {};
             rosterData.customGS[charName.toLowerCase()] = newGS;
 
             renderUI(); 
+            // Eğer Admin paneli açıksa, oradaki Roster listesini ve Tabloyu da anında güncelle
+            if (document.getElementById('adminModal').style.display === 'flex') {
+                renderAdminTable();
+                renderAdminRosters();
+            }
+
             document.getElementById('sync-status').innerText = "☁️ Yeni Gearscore buluta kaydediliyor...";
             await saveDataToCloud();
             document.getElementById('sync-status').innerText = "✅ Gearscore güncellendi!";
@@ -445,8 +460,7 @@
         // ---------------------------------------------------
         function dragStart(ev, raid, pIndex, mIndex) {
             const data = JSON.stringify({ raid, pIndex, mIndex });
-            ev.dataTransfer.setData("text/plain", data);
-            ev.dataTransfer.effectAllowed = "move";
+            ev.dataTransfer.setData("text/plain", data); ev.dataTransfer.effectAllowed = "move";
         }
         function dragOver(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
@@ -478,19 +492,15 @@
         }
 
         // ---------------------------------------------------
-        // PARTİ EKLEME & SİLME
+        // PARTİ & KARAKTER EKLEME/SİLME
         // ---------------------------------------------------
         function openPartyModal(raid) {
             activeModalRaid = raid;
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
             document.getElementById('modalRaidName').innerText = `${raidDisplayNames[raid]} - Parti Ekle`;
-            
-            const selectBox = document.getElementById('difficultySelect');
-            selectBox.innerHTML = ''; 
+            const selectBox = document.getElementById('difficultySelect'); selectBox.innerHTML = ''; 
             for (const [diff, gs] of Object.entries(RAID_DIFFICULTIES[raid])) {
-                let option = document.createElement('option');
-                option.value = diff;
-                option.innerText = `${diff} Mode (Min GS: ${gs})`;
+                let option = document.createElement('option'); option.value = diff; option.innerText = `${diff} Mode (Min GS: ${gs})`;
                 selectBox.appendChild(option);
             }
             document.getElementById('partyModal').style.display = 'flex';
@@ -499,151 +509,89 @@
 
         async function confirmAddParty() {
             if (!activeModalRaid) return;
-            const raid = activeModalRaid;
-            const diff = document.getElementById('difficultySelect').value;
-            const reqGS = RAID_DIFFICULTIES[raid][diff];
-            const currentPartyCount = rosterData[raid].length;
-            
-            rosterData[raid].push({
-                id: `${raid}_p_${Date.now()}`,
-                name: `${currentPartyCount + 1}. Parti (${diff})`,
-                reqGS: reqGS, done: false, members: []
-            });
-
-            closePartyModal(); 
-            renderUI();
-            document.getElementById('sync-status').innerText = "☁️ Yeni parti buluta kaydediliyor...";
-            await saveDataToCloud();
-            document.getElementById('sync-status').innerText = "✅ Parti başarıyla eklendi.";
-            setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+            const raid = activeModalRaid; const diff = document.getElementById('difficultySelect').value;
+            const reqGS = RAID_DIFFICULTIES[raid][diff]; const currentPartyCount = rosterData[raid].length;
+            rosterData[raid].push({ id: `${raid}_p_${Date.now()}`, name: `${currentPartyCount + 1}. Parti (${diff})`, reqGS: reqGS, done: false, members: [] });
+            closePartyModal(); renderUI(); await saveDataToCloud();
         }
 
         async function removeParty(raid, pIndex, partyName) {
             if (confirm(`⚠️ DİKKAT: "${partyName}" adlı partiyi silmek istediğinize emin misiniz?`)) {
                 rosterData[raid].splice(pIndex, 1);
                 rosterData[raid].forEach((p, idx) => { p.name = p.name.replace(/^\d+\./, `${idx + 1}.`); });
-                renderUI();
-                await saveDataToCloud();
+                renderUI(); await saveDataToCloud();
             }
         }
 
-        // ---------------------------------------------------
-        // KARAKTER EKLEME & SİLME
-        // ---------------------------------------------------
         async function addCharacter(raid, pIndex) {
-            const charName = prompt(`Yeni karakterin nickini girin:`);
-            if (!charName || charName.trim() === "") return;
-            const gsStr = prompt(`"${charName}" için Gearscore girin (Örn: 1720):`);
-            if (!gsStr) return;
-
-            const gs = parseFloat(gsStr);
-            const partyReqGS = rosterData[raid][pIndex].reqGS || RAID_DIFFICULTIES[raid]["NM"];
-
-            if (isNaN(gs) || gs < partyReqGS) {
-                alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), bu parti için yetersiz!\nMinimum GS gereksinimi: ${partyReqGS}`);
-                return;
-            }
-            if (!rosterData.customGS) rosterData.customGS = {};
-            rosterData.customGS[charName.toLowerCase()] = gs;
-
+            const charName = prompt(`Yeni karakterin nickini girin:`); if (!charName || charName.trim() === "") return;
+            const gsStr = prompt(`"${charName}" için Gearscore girin (Örn: 1720):`); if (!gsStr) return;
+            const gs = parseFloat(gsStr); const partyReqGS = rosterData[raid][pIndex].reqGS || RAID_DIFFICULTIES[raid]["NM"];
+            if (isNaN(gs) || gs < partyReqGS) { alert(`⚠️ HATA: "${charName}" isimli karakterin GS'si (${gs}), bu parti için yetersiz!\nMinimum GS gereksinimi: ${partyReqGS}`); return; }
+            if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[charName.toLowerCase()] = gs;
             rosterData[raid][pIndex].members.push({ name: charName.trim(), region: "CE", gs: gs });
-            renderUI();
-            await saveDataToCloud();
+            renderUI(); await saveDataToCloud();
         }
 
         async function removeCharacter(raid, pIndex, mIndex, charName) {
             if (confirm(`"${charName}" karakterini bu partiden silmek istediğinize emin misiniz?`)) {
-                rosterData[raid][pIndex].members.splice(mIndex, 1);
-                renderUI();
-                await saveDataToCloud();
+                rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); await saveDataToCloud();
             }
         }
 
+        async function togglePartyStatus(raid, pIndex, isChecked) {
+            rosterData[raid][pIndex].done = isChecked; renderUI(); await saveDataToCloud(); 
+        }
+
         // ---------------------------------------------------
-        // UI OLUŞTURMA (RENDER)
+        // UI OLUŞTURMA (RENDER MAIN PAGE)
         // ---------------------------------------------------
         function renderUI() {
-            const container = document.getElementById('raid-container');
-            container.innerHTML = '';
+            const container = document.getElementById('raid-container'); container.innerHTML = '';
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
-
             raidList.forEach(raid => {
-                let section = document.createElement('div');
-                section.className = 'raid-section';
-                section.setAttribute('data-raid', raid);
-
-                let title = document.createElement('h2');
-                title.className = 'raid-title';
-                title.innerText = raidDisplayNames[raid];
-                section.appendChild(title);
-
-                let grid = document.createElement('div');
-                grid.className = 'parties-grid';
-
+                let section = document.createElement('div'); section.className = 'raid-section'; section.setAttribute('data-raid', raid);
+                let title = document.createElement('h2'); title.className = 'raid-title'; title.innerText = raidDisplayNames[raid]; section.appendChild(title);
+                let grid = document.createElement('div'); grid.className = 'parties-grid';
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                     rosterData[raid].forEach((party, pIndex) => {
-                        let card = document.createElement('div');
-                        card.className = `party-card ${party.done ? 'completed' : ''}`;
-
+                        let card = document.createElement('div'); card.className = `party-card ${party.done ? 'completed' : ''}`;
                         let cardHTML = `
                             <div class="party-header">
                                 <div class="party-header-left">
                                     <span class="party-title">${party.name}</span>
                                     <button class="delete-party-btn" onclick="removeParty('${raid}', ${pIndex}, '${party.name}')" title="Partiyi Komple Sil">🗑️</button>
                                 </div>
-                                <input type="checkbox" class="status-checkbox" 
-                                    ${party.done ? 'checked' : ''} 
-                                    onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)" title="Tüm Partiyi Tamamla">
+                                <input type="checkbox" class="status-checkbox" ${party.done ? 'checked' : ''} onchange="togglePartyStatus('${raid}', ${pIndex}, this.checked)">
                             </div>
                             <ul class="member-list">
                         `;
-
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
                                 let isTracker = bigleRoster.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
-                                
                                 cardHTML += `
-                                    <li class="member-item ${isTracker ? 'tracker' : ''}" 
-                                        title="Takaslamak için sürükleyin${isTracker ? ' (API Gözlemcisi)' : ''}"
-                                        draggable="true"
-                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})"
-                                        ondragover="dragOver(event)"
-                                        ondragleave="dragLeave(event)"
-                                        ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
-                                        
+                                    <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
+                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
                                         <div class="member-info">
                                             <span class="member-name">${member.name}</span>
-                                            ${displayGS ? `<span class="member-gs" onclick="editCharacterGS('${member.name}', ${displayGS})" title="GS Düzenlemek İçin Tıklayın">[${displayGS}]</span>` : ''}
+                                            ${displayGS ? `<span class="member-gs" onclick="editCharacterGS('${member.name}', ${displayGS})" title="GS Düzenle">[${displayGS}]</span>` : ''}
                                             <span class="member-region">${member.region}</span>
                                         </div>
-                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')" title="Karakteri Sil">✖</button>
+                                        <button class="delete-btn" onclick="removeCharacter('${raid}', ${pIndex}, ${mIndex}, '${member.name}')">✖</button>
                                     </li>
                                 `;
                             });
                         }
-
-                        cardHTML += `</ul>`;
-                        cardHTML += `<button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>`;
-                        
-                        card.innerHTML = cardHTML;
-                        grid.appendChild(card);
+                        cardHTML += `</ul><button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>`;
+                        card.innerHTML = cardHTML; grid.appendChild(card);
                     });
                 }
                 section.appendChild(grid);
-                let addPartyBtn = document.createElement('button');
-                addPartyBtn.className = 'add-party-btn';
-                addPartyBtn.innerText = `+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle`;
-                addPartyBtn.onclick = () => openPartyModal(raid);
-                section.appendChild(addPartyBtn);
+                let addPartyBtn = document.createElement('button'); addPartyBtn.className = 'add-party-btn'; addPartyBtn.innerText = `+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle`;
+                addPartyBtn.onclick = () => openPartyModal(raid); section.appendChild(addPartyBtn);
                 container.appendChild(section);
             });
-        }
-
-        async function togglePartyStatus(raid, pIndex, isChecked) {
-            rosterData[raid][pIndex].done = isChecked;
-            renderUI(); 
-            await saveDataToCloud(); 
         }
 
         // ---------------------------------------------------
@@ -652,15 +600,12 @@
         function openAdminModal() {
             const pass = prompt("Admin Şifresini Girin:");
             if (pass !== "1234") { alert("Yanlış Şifre!"); return; }
-            
-            document.getElementById('admin-json-editor').value = JSON.stringify(rosterData, null, 4);
             renderAdminTable();
+            renderAdminRosters();
             document.getElementById('adminModal').style.display = 'flex';
         }
 
-        function closeAdminModal() {
-            document.getElementById('adminModal').style.display = 'none';
-        }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
 
         function renderAdminTable() {
             let html = `<table class="admin-table"><tr><th>Raid</th><th>Parti İsmi</th><th>Min GS</th><th>Üyeler (GS)</th><th>Durum</th></tr>`;
@@ -683,22 +628,50 @@
             document.getElementById('admin-table-container').innerHTML = html;
         }
 
-        async function saveAdminData() {
+        function renderAdminRosters() {
+            let html = '';
+            for (const [rosterName, members] of Object.entries(ROSTERS)) {
+                html += `
+                <div class="roster-group">
+                    <h4>${rosterName}</h4>
+                    <div class="roster-grid">`;
+                
+                members.forEach(member => {
+                    let actualGS = getActualGS(member, KNOWN_GS[member] || 0);
+                    // İsimlerin baş harfini büyüt
+                    let displayName = member.charAt(0).toUpperCase() + member.slice(1);
+                    html += `
+                        <div class="roster-member">
+                            <span>${displayName}</span>
+                            <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})" title="GS Düzenle">[${actualGS}]</span>
+                        </div>`;
+                });
+                
+                html += `</div></div>`;
+            }
+            document.getElementById('admin-rosters-container').innerHTML = html;
+        }
+
+        function openRawJsonModal() {
+            document.getElementById('admin-json-editor').value = JSON.stringify(rosterData, null, 4);
+            document.getElementById('rawJsonModal').style.display = 'flex';
+        }
+
+        function closeRawJsonModal() { document.getElementById('rawJsonModal').style.display = 'none'; }
+
+        async function saveRawJsonData() {
             try {
                 const editedJson = document.getElementById('admin-json-editor').value;
                 const parsed = JSON.parse(editedJson); 
-                
-                rosterData = parsed; // Ana veriyi güncelle
-                renderUI(); // Ana sayfayı anında güncelle
+                rosterData = parsed; 
+                renderUI(); 
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    renderAdminTable(); renderAdminRosters();
+                }
                 
                 document.getElementById('sync-status').innerText = "☁️ Admin değişiklikleri kaydediliyor...";
-                await fetch(WORKER_URL + "/?action=save", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(rosterData)
-                });
-                
-                closeAdminModal();
+                await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
+                closeRawJsonModal();
                 document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
                 setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
             } catch (error) {
@@ -712,8 +685,7 @@
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status');
             const lastResetTime = getLastResetTimestamp();
-            let updatedCount = 0;
-            let fetchQueue = [];
+            let updatedCount = 0; let fetchQueue = [];
             
             raidList.forEach(raid => {
                 if (rosterData[raid] && Array.isArray(rosterData[raid])) {
@@ -728,8 +700,7 @@
 
             if (fetchQueue.length === 0) { statusText.innerText = "✅ Bütün partiler zaten tamamlanmış!"; statusText.style.color = "var(--success-green)"; return; }
 
-            const syncBtn = document.querySelector('.sync-btn');
-            syncBtn.disabled = true; syncBtn.style.opacity = "0.5";
+            const syncBtn = document.querySelector('.sync-btn'); syncBtn.disabled = true; syncBtn.style.opacity = "0.5";
 
             for (let i = 0; i < fetchQueue.length; i++) {
                 let task = fetchQueue[i]; let char = task.tracker;
@@ -750,11 +721,9 @@
                             let regex = /\{[^}]*boss:"([^"]+)"[^}]*timestamp:(\d+)[^}]*\}/g;
                             let match;
                             while ((match = regex.exec(pageText)) !== null) {
-                                let bossName = match[1].toLowerCase();
-                                let killTime = parseInt(match[2]);
+                                let bossName = match[1].toLowerCase(); let killTime = parseInt(match[2]);
                                 if (killTime > lastResetTime && bossName.includes(task.raid)) {
-                                    rosterData[task.raid][task.pIndex].done = true;
-                                    updatedCount++; break; 
+                                    rosterData[task.raid][task.pIndex].done = true; updatedCount++; break; 
                                 }
                             }
                             success = true; 
@@ -764,13 +733,11 @@
                         else { break; }
                     }
                 }
-                if (success) { renderUI(); }
-                await new Promise(resolve => setTimeout(resolve, 2500));
+                if (success) { renderUI(); } await new Promise(resolve => setTimeout(resolve, 2500));
             }
 
             if (updatedCount > 0) { statusText.innerText = "☁️ Kaydediliyor..."; await saveDataToCloud(); }
-            syncBtn.disabled = false; syncBtn.style.opacity = "1";
-            statusText.style.color = "var(--success-green)";
+            syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
             statusText.innerText = updatedCount > 0 ? `✅ Tarama bitti! ${updatedCount} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
             setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 6000);
         }
