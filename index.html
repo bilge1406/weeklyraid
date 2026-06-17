@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -207,10 +207,8 @@
     </div>
 
     <div class="raid-container" id="raid-container">
-        <!-- JS tarafından doldurulacak -->
-    </div>
+        </div>
 
-    <!-- PARTİ EKLEME MODALI -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -223,7 +221,6 @@
         </div>
     </div>
 
-    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1001;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -235,7 +232,6 @@
         </div>
     </div>
 
-    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -255,8 +251,7 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (Kadrolar)</h4>
                     <div id="admin-rosters-container" class="roster-section">
-                        <!-- JS ile Rosterlar buraya basılacak -->
-                    </div>
+                        </div>
                 </div>
             </div>
         </div>
@@ -274,7 +269,6 @@
         };
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
         
-        // Bu sadece ilk kurulumda (veritabanı sıfırken) içeriği doldurmak için
         const KNOWN_GS = {
             "jihyogehan": 1723, "boksorgehan": 1715, "dancergehan": 1716, "ayibogangehan": 1715, "orakgehan": 1715, "wintergehan": 1710,
             "aelathea": 1737.5, "anilessa": 1724, "laithwen": 1717.5, "zeradorpala": 1710,
@@ -314,7 +308,6 @@
                 { id: `cathedral_p6`, name: "6. Parti (NM)", reqGS: 1700, done: false, members: [createMember("Buckysy"), createMember("Wintergehan")] }
             ];
             
-            // YENİ: Roster Grupları Bulut Veritabanına Eklendi
             defaultData.customRosters = {
                 "Bilge Roster": ["jihyogehan", "boksorgehan", "dancergehan", "ayibogangehan", "orakgehan", "wintergehan"],
                 "Zerador Roster": ["aelathea", "anilessa", "laithwen", "zeradorpala"],
@@ -329,15 +322,20 @@
         let rosterData = {};
         let activeModalRaid = ""; 
 
+        // ---------------------------------------------------
+        // BULUT VERİTABANI İŞLEMLERİ (CACHE DÜZELTMELİ)
+        // ---------------------------------------------------
         async function loadDataFromCloud() {
             const container = document.getElementById('raid-container');
             container.innerHTML = '<div class="loading-text">☁️ Buluttan veriler çekiliyor... Lütfen bekleyin.</div>';
             try {
-                let response = await fetch(WORKER_URL + "/?action=load");
+                // Tarayıcının eski veriyi dayatmasını engellemek için nocache parametresi ve no-store eklendi
+                let response = await fetch(WORKER_URL + "/?action=load&nocache=" + new Date().getTime(), {
+                    cache: 'no-store'
+                });
                 let saved = await response.text();
                 if (saved && saved !== "null" && saved.trim() !== "") { 
                     rosterData = JSON.parse(saved); 
-                    // Eski veritabanı yedeğinde customRosters yoksa enjekte et
                     if(!rosterData.customRosters) {
                         rosterData.customRosters = initDefaultData().customRosters;
                         saveDataToCloud();
@@ -534,7 +532,6 @@
         function renderUI() {
             const container = document.getElementById('raid-container'); container.innerHTML = '';
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
-            // API Gözlemcilerini Dinamik Yapalım
             const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
 
             raidList.forEach(raid => {
@@ -613,6 +610,7 @@
                 }
             });
             html += `</table>`;
+            document.getElementById('table-container').innerHTML = html;
             document.getElementById('admin-table-container').innerHTML = html;
         }
 
