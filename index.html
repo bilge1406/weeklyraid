@@ -231,7 +231,7 @@
             </select>
 
             <div class="modal-buttons">
-                <!-- DİKKAT: İptal butonu artık sadece bu modalı kapatıyor -->
+                <!-- DİKKAT: İptal butonu sadece bu modalı kapatıyor -->
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('partyModal').style.display='none'">İptal</button>
                 <button class="modal-btn modal-btn-confirm" onclick="confirmAddParty()">Oluştur</button>
             </div>
@@ -656,6 +656,7 @@
                 await saveDataToCloud();
                 document.getElementById('sync-status').innerText = "✅ Takas kaydedildi.";
             } catch (e) {
+                // Hata olursa geri al
                 rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember;
                 rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember;
                 renderUI();
@@ -944,7 +945,11 @@
                             let match;
                             while ((match = regex.exec(pageText)) !== null) {
                                 let bossName = match[1].toLowerCase(); let killTime = parseInt(match[2]);
-                                if (killTime > lastResetTime && bossName.includes(task.raid)) {
+                                
+                                // YENİ EKLENEN KISIM: Cathedral -> Arcenos Çevirisi
+                                let searchKeyword = (task.raid === "cathedral") ? "arcenos" : task.raid;
+
+                                if (killTime > lastResetTime && bossName.includes(searchKeyword)) {
                                     rosterData[task.raid][task.pIndex].done = true; updatedCount++; break; 
                                 }
                             }
