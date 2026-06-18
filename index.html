@@ -104,7 +104,6 @@
 
         .member-info { display: flex; align-items: center; gap: 8px; }
         
-        /* CLASS ICON STİLİ (Ana Sayfa İçin Sabit) */
         .class-icon { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; }
         
         .member-name { font-weight: 600; color: #cbd5e1; }
@@ -158,6 +157,7 @@
         .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .admin-table th, .admin-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
         .admin-table th { color: var(--accent-gold); position: sticky; top: 0; background: var(--card-bg); z-index: 1;}
+        .admin-table tr { transition: background-color 0.2s; }
         .admin-table tr:hover { background: rgba(255,255,255,0.05); }
         .status-done { color: var(--success-green); font-weight: bold; }
         .status-wait { color: var(--accent-red); font-weight: bold; }
@@ -251,6 +251,10 @@
                 </optgroup>
                 <optgroup label="DPS (Specialist)">
                     <option value="Aeromancer">Aeromancer</option>
+                    <option value="Wildsoul">Wildsoul</option>
+                </optgroup>
+                <optgroup label="Guardian">
+                    <option value="Guardianknight">Guardianknight</option>
                 </optgroup>
             </select>
 
@@ -310,6 +314,10 @@
                 </optgroup>
                 <optgroup label="DPS (Specialist)">
                     <option value="Aeromancer">Aeromancer</option>
+                    <option value="Wildsoul">Wildsoul</option>
+                </optgroup>
+                <optgroup label="Guardian">
+                    <option value="Guardianknight">Guardianknight</option>
                 </optgroup>
             </select>
             <div class="modal-buttons">
@@ -567,7 +575,6 @@
             }
         }
 
-        // Sınıf Düzenleme Fonksiyonları
         function editCharacterClass(charName, currentClass) {
             document.getElementById('editClassCharName').value = charName;
             document.getElementById('editClassSelect').value = currentClass || "Bilinmiyor";
@@ -650,6 +657,44 @@
 
             rosterData[source.raid][source.pIndex].members[source.mIndex] = targetMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = sourceMember;
             renderUI(); try { await saveDataToCloud(); } catch (e) { rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember; renderUI(); }
+        }
+
+        // YENİ: Roster Tablosu Satır Sürükleme Fonksiyonları
+        function dragRosterRow(ev, index) {
+            ev.dataTransfer.setData("text/plain", index);
+            ev.dataTransfer.effectAllowed = "move";
+        }
+        
+        function allowDropRosterRow(ev) {
+            ev.preventDefault();
+            ev.currentTarget.style.backgroundColor = "rgba(212, 175, 55, 0.15)";
+        }
+        
+        function leaveDropRosterRow(ev) {
+            ev.currentTarget.style.backgroundColor = "";
+        }
+        
+        async function dropRosterRow(ev, targetIndex) {
+            ev.preventDefault();
+            ev.currentTarget.style.backgroundColor = "";
+            let sourceIndex = ev.dataTransfer.getData("text/plain");
+            if (sourceIndex === "" || sourceIndex == targetIndex) return;
+            sourceIndex = parseInt(sourceIndex);
+            
+            let roster = rosterData.customRosters["Bilge Roster"];
+            let movedItem = roster.splice(sourceIndex, 1)[0];
+            roster.splice(targetIndex, 0, movedItem);
+            
+            renderBilgeRosterAnalysis();
+            renderAdminRosters();
+            renderUI();
+            
+            document.getElementById('sync-status').innerText = "☁️ Sıralama kaydediliyor...";
+            try { 
+                await saveDataToCloud(); 
+                document.getElementById('sync-status').innerText = "✅ Sıralama kaydedildi.";
+                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
+            } catch(e) {}
         }
 
         async function togglePartyStatus(raid, pIndex, isChecked) {
@@ -795,9 +840,13 @@
             let bilgeRoster = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : null;
             if (!bilgeRoster) { document.getElementById('bilge-analysis-container').innerHTML = "<p>Boş</p>"; return; }
             let html = `<table class="admin-table"><tr><th>Karakter</th><th>Armoche</th><th>Kazeros</th><th>Serca</th><th>Cathedral</th></tr>`;
-            bilgeRoster.forEach(charName => {
+            bilgeRoster.forEach((charName, index) => {
                 let displayName = charName.charAt(0).toUpperCase() + charName.slice(1);
-                html += `<tr><td style="font-weight:bold; color:#cbd5e1; font-size:14px;">${displayName}</td>`;
+                
+                // YENİ: Satır Sürüklenebilirlik Eklendi
+                html += `<tr draggable="true" ondragstart="dragRosterRow(event, ${index})" ondragover="allowDropRosterRow(event)" ondragleave="leaveDropRosterRow(event)" ondrop="dropRosterRow(event, ${index})" style="cursor: grab;">
+                            <td style="font-weight:bold; color:#cbd5e1; font-size:14px;"><span style="color:#838392; margin-right:8px; font-size:16px;">☰</span>${displayName}</td>`;
+                
                 raidList.forEach(raid => {
                     let raidStatus = `<span style="color:#475569; font-weight:600;">- Girilmedi -</span>`;
                     if (rosterData[raid]) {
