@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -67,8 +67,6 @@
         .sync-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4); }
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
-        .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
-        .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
         .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
 
@@ -191,7 +189,6 @@
 
     <div class="raid-container" id="raid-container"></div>
 
-    <!-- MODALLAR -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -269,7 +266,6 @@
         </div>
     </div>
 
-    <!-- SINIF DÜZENLEME MODALI (Sadece Admin Panelinden Tetiklenecek) -->
     <div class="modal-overlay" id="editClassModal" style="z-index: 1002;">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title">Sınıf Düzenle</h3>
@@ -327,7 +323,6 @@
         </div>
     </div>
 
-    <!-- GS DÜZENLEME MODALI -->
     <div class="modal-overlay" id="editGsModal" style="z-index: 1002;">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title">GS Düzenle</h3>
@@ -340,7 +335,6 @@
         </div>
     </div>
 
-    <!-- YENİ ROSTER MODALI -->
     <div class="modal-overlay" id="addRosterModal" style="z-index: 1002;">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title">Yeni Roster Grubu</h3>
@@ -352,7 +346,6 @@
         </div>
     </div>
 
-    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1003;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -364,7 +357,6 @@
         </div>
     </div>
 
-    <!-- DB TABLE MODALI -->
     <div class="modal-overlay" id="dbTableModal" style="z-index: 1001;">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -375,7 +367,6 @@
         </div>
     </div>
 
-    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -659,7 +650,6 @@
             renderUI(); try { await saveDataToCloud(); } catch (e) { rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember; renderUI(); }
         }
 
-        // YENİ: Roster Tablosu Satır Sürükleme Fonksiyonları
         function dragRosterRow(ev, index) {
             ev.dataTransfer.setData("text/plain", index);
             ev.dataTransfer.effectAllowed = "move";
@@ -747,7 +737,6 @@
             container.innerHTML = '';
             
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
-            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
 
             raidList.forEach(raid => {
                 let totalParties = rosterData[raid] ? rosterData[raid].length : 0;
@@ -804,12 +793,11 @@
                         `;
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
-                                let isTracker = trackers && trackers.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
                                 let displayClass = getActualClass(member.name, member.charClass);
                                 
                                 cardHTML += `
-                                    <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
+                                    <li class="member-item" title="Takaslamak için sürükleyin" draggable="true"
                                         ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
                                         <div class="member-info">
                                             <img src="Class Icons/${displayClass}.png" class="class-icon" title="${displayClass}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; this.style.display='none';">
@@ -843,7 +831,6 @@
             bilgeRoster.forEach((charName, index) => {
                 let displayName = charName.charAt(0).toUpperCase() + charName.slice(1);
                 
-                // YENİ: Satır Sürüklenebilirlik Eklendi
                 html += `<tr draggable="true" ondragstart="dragRosterRow(event, ${index})" ondragover="allowDropRosterRow(event)" ondragleave="leaveDropRosterRow(event)" ondrop="dropRosterRow(event, ${index})" style="cursor: grab;">
                             <td style="font-weight:bold; color:#cbd5e1; font-size:14px;"><span style="color:#838392; margin-right:8px; font-size:16px;">☰</span>${displayName}</td>`;
                 
@@ -853,10 +840,14 @@
                         for (let party of rosterData[raid]) {
                             if (party.members.find(m => m.name.toLowerCase() === charName.toLowerCase())) {
                                 let pName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
+                                let doneIcon = party.done ? `<span title="Tamamlandı" style="margin-left:4px; font-size:12px;">✅</span>` : `<span title="Bekliyor" style="margin-left:4px; font-size:12px; filter:grayscale(1); opacity:0.5;">⏳</span>`;
+                                
                                 if (party.members.length > 1) {
                                     let others = party.members.filter(m => m.name.toLowerCase() !== charName.toLowerCase()).map(m => m.name).join(', ');
-                                    raidStatus = `<span style="color:var(--success-green); font-weight:bold; cursor:help;" title="Ekip: ${others}">Ekiple</span><br><span style="font-size:10px; color:#838392;">(${pName})</span>`;
-                                } else { raidStatus = `<span style="color:var(--accent-gold); font-weight:bold;">Tek Başına</span><br><span style="font-size:10px; color:#838392;">(${pName})</span>`; }
+                                    raidStatus = `<span style="color:var(--success-green); font-weight:bold; cursor:help;" title="Ekip: ${others}">Ekiple</span>${doneIcon}<br><span style="font-size:10px; color:#838392;">(${pName})</span>`;
+                                } else { 
+                                    raidStatus = `<span style="color:var(--accent-gold); font-weight:bold;">Tek Başına</span>${doneIcon}<br><span style="font-size:10px; color:#838392;">(${pName})</span>`; 
+                                }
                                 break; 
                             }
                         }
@@ -1013,7 +1004,8 @@
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status'); statusText.innerText = "⏳ Tarama öncesi güncel veriler çekiliyor..."; statusText.style.color = "var(--accent-gold)";
             await loadDataFromCloud(true); const lastResetTime = getLastResetTimestamp(); let updatedCount = 0; let fetchQueue = [];
-            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
+            
+            const trackers = rosterData.customRosters && rosterData.customRosters["Bilge Roster"] ? rosterData.customRosters["Bilge Roster"] : [];
             
             raidList.forEach(raid => { if (rosterData[raid]) { rosterData[raid].forEach((party, pIndex) => {
                 if (!party.done) { let tracker = party.members.find(m => trackers && trackers.includes(m.name.toLowerCase())); if (tracker) fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
