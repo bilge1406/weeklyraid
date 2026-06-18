@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -58,7 +58,7 @@
             gap: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             width: 100%;
-            max-width: 650px;
+            max-width: 600px;
         }
 
         .btn-group {
@@ -69,7 +69,7 @@
             justify-content: center;
         }
 
-        .sync-btn, .cloud-btn, .admin-btn, .gs-btn {
+        .sync-btn, .cloud-btn, .admin-btn {
             color: white;
             border: none;
             padding: 12px 20px;
@@ -89,10 +89,7 @@
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
 
-        .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
-        .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
-
-        .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
+        .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 120px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
 
         #sync-status { font-size: 14px; color: var(--accent-gold); font-weight: 600; min-height: 20px; text-align: center; }
@@ -209,7 +206,6 @@
     <div class="dashboard-controls">
         <div class="btn-group">
             <button class="sync-btn" onclick="syncAllParties()">🔄 API Log Taramasını Başlat</button>
-            <button class="gs-btn" onclick="autoUpdateAllGS()">🚀 Tüm GS'leri Otomatik Güncelle</button>
             <button class="cloud-btn" onclick="loadDataFromCloud()">☁️ Buluttan Yenile</button>
             <button class="admin-btn" onclick="openAdminModal()">⚙️ Admin</button>
         </div>
@@ -218,7 +214,6 @@
 
     <div class="raid-container" id="raid-container"></div>
 
-    <!-- MODALLAR -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -308,7 +303,10 @@
                     <div id="bilge-analysis-container" style="overflow-y:auto;">Tablo Yükleniyor...</div>
                 </div>
                 <div class="admin-panel-col" style="flex: 1;">
-                    <h4 style="margin:0; margin-bottom: 10px; color:var(--accent-gold);">👥 Roster Yönetimi (GS Düzenle)</h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h4 style="margin:0; color:var(--accent-gold);">👥 Roster Yönetimi</h4>
+                        <button id="autoGsBtnAdmin" class="btn-raw" style="background: linear-gradient(135deg, #10b981, #047857); padding: 6px 12px; font-size:12px; border-radius:4px;" onclick="autoUpdateAllGS()">🚀 Oto GS Güncelle</button>
+                    </div>
                     <div id="admin-rosters-container" class="roster-section"></div>
                 </div>
             </div>
@@ -686,11 +684,15 @@
             } catch (e) { alert("HATA: JSON formatı bozuk!"); }
         }
 
-        // QoL 4: Tüm GS'leri Otomatik Güncelleme (429 Korumalı)
+        // QoL 4: Tüm GS'leri Otomatik Güncelleme (MODAL İÇİ UX İYİLEŞTİRİLDİ)
         async function autoUpdateAllGS() {
             const statusText = document.getElementById('sync-status');
+            const btn = document.getElementById('autoGsBtnAdmin');
+            const originalBtnText = btn ? btn.innerHTML : "🚀 Oto GS Güncelle";
+
             statusText.innerText = "⏳ Tüm karakterlerin GS bilgileri çekiliyor...";
             statusText.style.color = "var(--accent-gold)";
+            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; btn.innerHTML = "⏳ Hesaplanıyor..."; }
             
             let charsToUpdate = {}; 
             raidList.forEach(raid => {
@@ -707,17 +709,19 @@
             }
 
             let charKeys = Object.keys(charsToUpdate);
-            if (charKeys.length === 0) return;
-
-            const btn = document.querySelector('.gs-btn');
-            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; }
+            if (charKeys.length === 0) {
+                if(btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = originalBtnText; }
+                return;
+            }
 
             let updatedCount = 0;
             
             for (let i = 0; i < charKeys.length; i++) {
                 let cName = charKeys[i];
                 let cRegion = charsToUpdate[cName];
+                
                 statusText.innerText = `⏳ GS Güncelleniyor: ${cName} [${i+1}/${charKeys.length}]`;
+                if(btn) btn.innerHTML = `⏳ ${cName} [${i+1}/${charKeys.length}]`;
                 
                 let targetUrl = `https://lostark.bible/character/${cRegion}/${cName}`;
                 let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
@@ -745,17 +749,21 @@
                     } catch(e) {
                         if (e.message === "429_RATE_LIMIT") {
                             retryCount++;
-                            let waitTime = retryCount * 8000;
+                            let waitTime = retryCount * 15000; // 15sn, 30sn bekleme
                             statusText.innerText = `⚠️ Hız Limiti (429)! ${waitTime/1000}sn mola...`;
+                            if(btn) btn.innerHTML = `⚠️ Mola (${waitTime/1000}s)`;
                             await new Promise(r => setTimeout(r, waitTime));
                         } else break;
                     }
                 }
-                await new Promise(r => setTimeout(r, 3500)); 
+                // Bot gibi görünmemek için rastgele 4.5 ile 7 saniye arası insan taklidi (Jitter) bekleme
+                let baseDelay = Math.floor(Math.random() * 2500) + 4500;
+                await new Promise(r => setTimeout(r, baseDelay)); 
             }
 
             if(updatedCount > 0) {
                 statusText.innerText = "☁️ Yeni GS değerleri buluta kaydediliyor...";
+                if(btn) btn.innerHTML = "☁️ Kaydediliyor...";
                 await saveDataToCloud();
                 renderUI();
                 if (document.getElementById('adminModal').style.display === 'flex') {
@@ -763,10 +771,15 @@
                 }
             }
 
-            if(btn) { btn.disabled = false; btn.style.opacity = "1"; }
+            if(btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = `✅ ${updatedCount} Güncellendi!`; }
             statusText.innerText = `✅ İşlem bitti. ${updatedCount} karakterin GS'si güncellendi.`;
             statusText.style.color = "var(--success-green)";
-            setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 5000);
+            
+            setTimeout(() => { 
+                statusText.innerText = 'Sistem Hazır.'; 
+                statusText.style.color = 'var(--accent-gold)'; 
+                if(btn) btn.innerHTML = originalBtnText;
+            }, 5000);
         }
 
         async function syncAllParties() {
@@ -806,14 +819,16 @@
                     } catch (error) { 
                         if (error.message === "429_RATE_LIMIT") { 
                             retryCount++; 
-                            let waitTime = retryCount * 8000;
+                            let waitTime = retryCount * 15000; // 15sn, 30sn bekleme
                             statusText.innerText = `⚠️ 429 Hızı Aşıldı. ${waitTime/1000}sn mola...`; 
                             await new Promise(resolve => setTimeout(resolve, waitTime)); 
                         } else break; 
                     }
                 }
+                
+                let baseDelay = Math.floor(Math.random() * 2500) + 4500;
                 if (success) renderUI(); 
-                await new Promise(resolve => setTimeout(resolve, 3500));
+                await new Promise(resolve => setTimeout(resolve, baseDelay));
             }
             if (updatedCount > 0) try { await saveDataToCloud(); } catch(e){} 
             syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
