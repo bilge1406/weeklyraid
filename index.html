@@ -104,7 +104,7 @@
 
         .member-info { display: flex; align-items: center; gap: 8px; }
         
-        /* CLASS ICON STİLİ */
+        /* CLASS ICON STİLİ (Ana Sayfa İçin Sabit) */
         .class-icon { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; }
         
         .member-name { font-weight: 600; color: #cbd5e1; }
@@ -265,17 +265,61 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="addRosterModal" style="z-index: 1002;">
+    <!-- SINIF DÜZENLEME MODALI (Sadece Admin Panelinden Tetiklenecek) -->
+    <div class="modal-overlay" id="editClassModal" style="z-index: 1002;">
         <div class="modal-box modal-box-small">
-            <h3 class="modal-title">Yeni Roster Grubu</h3>
-            <input type="text" id="newRosterInput" class="modal-input" placeholder="Roster Adı (Örn: Yedek Kadro)" autocomplete="off">
+            <h3 class="modal-title">Sınıf Düzenle</h3>
+            <input type="hidden" id="editClassCharName">
+            <select id="editClassSelect" class="modal-select">
+                <option value="Bilinmiyor">Sınıf Seçin...</option>
+                <optgroup label="Support">
+                    <option value="Paladin">Paladin</option>
+                    <option value="Bard">Bard</option>
+                    <option value="Artist">Artist</option>
+                    <option value="Valkyrie">Valkyrie</option>
+                </optgroup>
+                <optgroup label="DPS (Warrior)">
+                    <option value="Berserker">Berserker</option>
+                    <option value="Destroyer">Destroyer</option>
+                    <option value="Gunlancer">Gunlancer</option>
+                    <option value="Slayer">Slayer</option>
+                </optgroup>
+                <optgroup label="DPS (Martial Artist)">
+                    <option value="Glaivier">Glaivier</option>
+                    <option value="Scrapper">Scrapper</option>
+                    <option value="Soulfist">Soulfist</option>
+                    <option value="Striker">Striker</option>
+                    <option value="Wardancer">Wardancer</option>
+                    <option value="Breaker">Breaker</option>
+                </optgroup>
+                <optgroup label="DPS (Gunner)">
+                    <option value="Artillerist">Artillerist</option>
+                    <option value="Deadeye">Deadeye</option>
+                    <option value="Gunslinger">Gunslinger</option>
+                    <option value="Machinist">Machinist</option>
+                    <option value="Sharpshooter">Sharpshooter</option>
+                </optgroup>
+                <optgroup label="DPS (Mage & Assassin)">
+                    <option value="Arcanist">Arcanist</option>
+                    <option value="Sorceress">Sorceress</option>
+                    <option value="Summoner">Summoner</option>
+                    <option value="Deathblade">Deathblade</option>
+                    <option value="Shadowhunter">Shadowhunter</option>
+                    <option value="Reaper">Reaper</option>
+                    <option value="Souleater">Souleater</option>
+                </optgroup>
+                <optgroup label="DPS (Specialist)">
+                    <option value="Aeromancer">Aeromancer</option>
+                </optgroup>
+            </select>
             <div class="modal-buttons">
-                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addRosterModal').style.display='none'">İptal</button>
-                <button class="modal-btn modal-btn-confirm" onclick="confirmNewRoster()">Oluştur</button>
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editClassModal').style.display='none'">İptal</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmEditClass()">Kaydet</button>
             </div>
         </div>
     </div>
 
+    <!-- GS DÜZENLEME MODALI -->
     <div class="modal-overlay" id="editGsModal" style="z-index: 1002;">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title">GS Düzenle</h3>
@@ -288,6 +332,19 @@
         </div>
     </div>
 
+    <!-- YENİ ROSTER MODALI -->
+    <div class="modal-overlay" id="addRosterModal" style="z-index: 1002;">
+        <div class="modal-box modal-box-small">
+            <h3 class="modal-title">Yeni Roster Grubu</h3>
+            <input type="text" id="newRosterInput" class="modal-input" placeholder="Roster Adı (Örn: Yedek Kadro)" autocomplete="off">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addRosterModal').style.display='none'">İptal</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmNewRoster()">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAW JSON MODALI -->
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1003;">
         <div class="modal-box modal-box-medium">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -299,6 +356,7 @@
         </div>
     </div>
 
+    <!-- DB TABLE MODALI -->
     <div class="modal-overlay" id="dbTableModal" style="z-index: 1001;">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -309,6 +367,7 @@
         </div>
     </div>
 
+    <!-- ADMIN PANELİ MODALI -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -433,9 +492,9 @@
         }
 
         function getActualClass(charName, defaultClass) {
-            if (!charName) return defaultClass;
+            if (!charName) return defaultClass || "Bilinmiyor";
             const nameLower = charName.toLowerCase();
-            return (rosterData.customClasses && rosterData.customClasses[nameLower]) || KNOWN_CLASSES[nameLower] || defaultClass;
+            return (rosterData.customClasses && rosterData.customClasses[nameLower]) || KNOWN_CLASSES[nameLower] || defaultClass || "Bilinmiyor";
         }
 
         function handleCharNameInput(val) {
@@ -508,17 +567,40 @@
             }
         }
 
-        function openNewRosterModal() { document.getElementById('newRosterInput').value = ""; document.getElementById('addRosterModal').style.display = 'flex'; setTimeout(() => document.getElementById('newRosterInput').focus(), 100); }
-        async function confirmNewRoster() {
-            let rName = document.getElementById('newRosterInput').value.trim(); if(!rName) return;
-            if(!rosterData.customRosters) rosterData.customRosters = {}; if(!rosterData.customRosters[rName]) rosterData.customRosters[rName] = [];
-            document.getElementById('addRosterModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+        // Sınıf Düzenleme Fonksiyonları
+        function editCharacterClass(charName, currentClass) {
+            document.getElementById('editClassCharName').value = charName;
+            document.getElementById('editClassSelect').value = currentClass || "Bilinmiyor";
+            document.getElementById('editClassModal').style.display = 'flex';
         }
 
-        async function removeRoster(rosterName) {
-            if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
-                delete rosterData.customRosters[rosterName]; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+        async function confirmEditClass() {
+            let charName = document.getElementById('editClassCharName').value;
+            let newClass = document.getElementById('editClassSelect').value;
+            
+            if (!rosterData.customClasses) rosterData.customClasses = {};
+            rosterData.customClasses[charName.toLowerCase()] = newClass;
+            
+            raidList.forEach(raid => {
+                if (rosterData[raid]) {
+                    rosterData[raid].forEach(party => {
+                        party.members.forEach(m => {
+                            if (m.name.toLowerCase() === charName.toLowerCase()) {
+                                m.charClass = newClass;
+                            }
+                        });
+                    });
+                }
+            });
+
+            document.getElementById('editClassModal').style.display = 'none';
+            renderUI();
+            if (document.getElementById('adminModal').style.display === 'flex') {
+                renderAdminTable(); 
+                renderAdminRosters(); 
+                renderBilgeRosterAnalysis(); 
             }
+            try { await saveDataToCloud(); } catch(e){}
         }
 
         function editCharacterGS(charName, currentGS) {
@@ -533,6 +615,19 @@
             document.getElementById('editGsModal').style.display = 'none'; renderUI();
             if (document.getElementById('adminModal').style.display === 'flex') { renderAdminTable(); renderAdminRosters(); renderBilgeRosterAnalysis(); }
             try { await saveDataToCloud(); } catch(e){}
+        }
+
+        function openNewRosterModal() { document.getElementById('newRosterInput').value = ""; document.getElementById('addRosterModal').style.display = 'flex'; setTimeout(() => document.getElementById('newRosterInput').focus(), 100); }
+        async function confirmNewRoster() {
+            let rName = document.getElementById('newRosterInput').value.trim(); if(!rName) return;
+            if(!rosterData.customRosters) rosterData.customRosters = {}; if(!rosterData.customRosters[rName]) rosterData.customRosters[rName] = [];
+            document.getElementById('addRosterModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+        }
+
+        async function removeRoster(rosterName) {
+            if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
+                delete rosterData.customRosters[rosterName]; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+            }
         }
 
         function dragStart(ev, raid, pIndex, mIndex) { ev.dataTransfer.setData("text/plain", JSON.stringify({ raid, pIndex, mIndex })); ev.dataTransfer.effectAllowed = "move"; }
@@ -744,8 +839,17 @@
             for (const [rosterName, members] of Object.entries(rosterData.customRosters)) {
                 html += `<div class="roster-group"><h4>${rosterName} <button class="roster-del-btn" style="float:right;" onclick="removeRoster('${rosterName}')">🗑️</button></h4><div class="roster-grid">`;
                 members.forEach(member => {
-                    let actualGS = getActualGS(member, 0); let displayName = member.charAt(0).toUpperCase() + member.slice(1);
-                    html += `<div class="roster-member"><span style="display:flex; align-items:center;">${displayName} <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')">✖</button></span><span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})">[${actualGS}]</span></div>`;
+                    let actualGS = getActualGS(member, 0); 
+                    let actualClass = getActualClass(member, "Bilinmiyor");
+                    let displayName = member.charAt(0).toUpperCase() + member.slice(1);
+                    html += `<div class="roster-member">
+                                <span style="display:flex; align-items:center; gap:6px;">
+                                    <img src="Class Icons/${actualClass}.png" style="width:16px; height:16px; border-radius:3px;" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; this.style.display='none';">
+                                    <span style="cursor:pointer; border-bottom:1px dashed #cbd5e1;" onclick="editCharacterClass('${member}', '${actualClass}')" title="Sınıfı Düzenle">${displayName}</span> 
+                                    <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')" title="Gruptan Sil">✖</button>
+                                </span>
+                                <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})" title="GS Düzenle">[${actualGS}]</span>
+                            </div>`;
                 });
                 html += `</div><button class="add-roster-char-btn" onclick="addRosterCharacter('${rosterName}')">+ Ekle</button></div>`;
             }
