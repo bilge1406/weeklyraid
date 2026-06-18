@@ -98,8 +98,13 @@
         .member-list { list-style: none; padding: 0; margin: 0 0 10px 0; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
         .member-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: grab; user-select: none; transition: all 0.2s; border: 1px solid transparent; }
         .member-item:active { cursor: grabbing; }
-        .member-item.drag-over { border: 1px dashed var(--accent-gold); background: rgba(212, 175, 55, 0.1); transform: scale(1.02); }
-        .member-item.tracker { border-left: 2px solid var(--accent-gold); }
+        
+        /* SÜRÜKLE BIRAK VE ROSTER RENK EFEKTLERİ */
+        .member-item.drag-over { border: 1px dashed var(--accent-gold); background: rgba(212, 175, 55, 0.1) !important; transform: scale(1.02); }
+        .member-item.roster-bg-bilge { background: linear-gradient(90deg, rgba(225, 29, 72, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid var(--accent-red); }
+        .member-item.roster-bg-esin { background: linear-gradient(90deg, rgba(236, 72, 153, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid #ec4899; }
+        .member-item.roster-bg-zerador { background: linear-gradient(90deg, rgba(249, 115, 22, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid #f97316; }
+
         .member-item:hover .delete-btn { opacity: 1; pointer-events: auto; }
 
         .member-info { display: flex; align-items: center; gap: 8px; }
@@ -659,7 +664,6 @@
             renderUI(); try { await saveDataToCloud(); } catch (e) { rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember; renderUI(); }
         }
 
-        // YENİ: Roster Tablosu Satır Sürükleme Fonksiyonları
         function dragRosterRow(ev, index) {
             ev.dataTransfer.setData("text/plain", index);
             ev.dataTransfer.effectAllowed = "move";
@@ -747,7 +751,6 @@
             container.innerHTML = '';
             
             const raidDisplayNames = { "armoche": "Armoche", "kazeros": "Kazeros", "serca": "Serca", "cathedral": "Cathedral" };
-            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
 
             raidList.forEach(raid => {
                 let totalParties = rosterData[raid] ? rosterData[raid].length : 0;
@@ -804,12 +807,19 @@
                         `;
                         if (party.members && Array.isArray(party.members)) {
                             party.members.forEach((member, mIndex) => {
-                                let isTracker = trackers && trackers.includes(member.name.toLowerCase());
                                 let displayGS = getActualGS(member.name, member.gs);
                                 let displayClass = getActualClass(member.name, member.charClass);
                                 
+                                let rosterBgClass = "";
+                                if (rosterData.customRosters) {
+                                    let nLower = member.name.toLowerCase();
+                                    if (rosterData.customRosters["Bilge Roster"] && rosterData.customRosters["Bilge Roster"].includes(nLower)) rosterBgClass = "roster-bg-bilge";
+                                    else if (rosterData.customRosters["Esin Roster"] && rosterData.customRosters["Esin Roster"].includes(nLower)) rosterBgClass = "roster-bg-esin";
+                                    else if (rosterData.customRosters["Zerador Roster"] && rosterData.customRosters["Zerador Roster"].includes(nLower)) rosterBgClass = "roster-bg-zerador";
+                                }
+
                                 cardHTML += `
-                                    <li class="member-item ${isTracker ? 'tracker' : ''}" title="Takaslamak için sürükleyin" draggable="true"
+                                    <li class="member-item ${rosterBgClass}" title="Takaslamak için sürükleyin" draggable="true"
                                         ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
                                         <div class="member-info">
                                             <img src="Class Icons/${displayClass}.png" class="class-icon" title="${displayClass}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; this.style.display='none';">
@@ -843,7 +853,6 @@
             bilgeRoster.forEach((charName, index) => {
                 let displayName = charName.charAt(0).toUpperCase() + charName.slice(1);
                 
-                // YENİ: Satır Sürüklenebilirlik Eklendi
                 html += `<tr draggable="true" ondragstart="dragRosterRow(event, ${index})" ondragover="allowDropRosterRow(event)" ondragleave="leaveDropRosterRow(event)" ondrop="dropRosterRow(event, ${index})" style="cursor: grab;">
                             <td style="font-weight:bold; color:#cbd5e1; font-size:14px;"><span style="color:#838392; margin-right:8px; font-size:16px;">☰</span>${displayName}</td>`;
                 
@@ -1010,10 +1019,12 @@
             }, 5000);
         }
 
+        // YENİ: log taraması tekrar sadece bilge rosterındakilere bakacak şekilde ayarlandı
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status'); statusText.innerText = "⏳ Tarama öncesi güncel veriler çekiliyor..."; statusText.style.color = "var(--accent-gold)";
             await loadDataFromCloud(true); const lastResetTime = getLastResetTimestamp(); let updatedCount = 0; let fetchQueue = [];
-            const trackers = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : [];
+            
+            const trackers = rosterData.customRosters && rosterData.customRosters["Bilge Roster"] ? rosterData.customRosters["Bilge Roster"] : [];
             
             raidList.forEach(raid => { if (rosterData[raid]) { rosterData[raid].forEach((party, pIndex) => {
                 if (!party.done) { let tracker = party.members.find(m => trackers && trackers.includes(m.name.toLowerCase())); if (tracker) fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
