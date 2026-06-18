@@ -89,7 +89,6 @@
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
 
-        /* YENİ: Otomatik GS Butonu */
         .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
         .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
 
@@ -217,9 +216,9 @@
         <div id="sync-status">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
     </div>
 
-    <div class="raid-container" id="raid-container">
-        </div>
+    <div class="raid-container" id="raid-container"></div>
 
+    <!-- MODALLAR -->
     <div class="modal-overlay" id="partyModal">
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
@@ -687,13 +686,12 @@
             } catch (e) { alert("HATA: JSON formatı bozuk!"); }
         }
 
-        // QoL 4: Tüm GS'leri Otomatik Güncelleme Fonksiyonu
+        // QoL 4: Tüm GS'leri Otomatik Güncelleme (429 Korumalı)
         async function autoUpdateAllGS() {
             const statusText = document.getElementById('sync-status');
             statusText.innerText = "⏳ Tüm karakterlerin GS bilgileri çekiliyor...";
             statusText.style.color = "var(--accent-gold)";
             
-            // Tüm benzersiz karakterleri ve bölgelerini topla
             let charsToUpdate = {}; 
             raidList.forEach(raid => {
                 if (rosterData[raid]) {
@@ -724,32 +722,36 @@
                 let targetUrl = `https://lostark.bible/character/${cRegion}/${cName}`;
                 let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
                 
-                try {
-                    let response = await fetch(proxyUrl);
-                    if (response.status === 429) {
-                        statusText.innerText = `⚠️ Hız limiti... 5sn mola!`;
-                        await new Promise(r => setTimeout(r, 5000));
-                        i--; // Aynı karakteri tekrar dene
-                        continue;
-                    }
-                    if (!response.ok) continue;
-                    
-                    let htmlText = await response.text();
-                    
-                    // Profile sayfasındaki GS değerini yakalamak için güvenli Regex
-                    let gsMatch = htmlText.match(/(?:Item Level|iLvl|itemLevel|itemLevelValue)[^\d]*(\d{4}(?:\.\d{1,2})?)/i) || htmlText.match(/(\d{4}\.\d{2})/);
-
-                    if (gsMatch) {
-                        let parsedGS = parseFloat(gsMatch[1] || gsMatch[0]);
-                        if (!isNaN(parsedGS) && parsedGS >= 1600 && parsedGS <= 1800) {
-                            if (!rosterData.customGS) rosterData.customGS = {};
-                            rosterData.customGS[cName] = parsedGS;
-                            updatedCount++;
-                        }
-                    }
-                } catch(e) { console.log("Hata:", e); }
+                let success = false; let retryCount = 0;
                 
-                await new Promise(r => setTimeout(r, 1000)); // Hız sınırına takılmamak için 1 saniye bekle
+                while (!success && retryCount < 3) {
+                    try {
+                        let response = await fetch(proxyUrl);
+                        if (response.status === 429) throw new Error("429_RATE_LIMIT");
+                        if (!response.ok) throw new Error("HTTP Error");
+                        
+                        let htmlText = await response.text();
+                        let gsMatch = htmlText.match(/(?:Item Level|iLvl|itemLevel|itemLevelValue)[^\d]*(\d{4}(?:\.\d{1,2})?)/i) || htmlText.match(/(\d{4}\.\d{2})/);
+
+                        if (gsMatch) {
+                            let parsedGS = parseFloat(gsMatch[1] || gsMatch[0]);
+                            if (!isNaN(parsedGS) && parsedGS >= 1600 && parsedGS <= 1800) {
+                                if (!rosterData.customGS) rosterData.customGS = {};
+                                rosterData.customGS[cName] = parsedGS;
+                                updatedCount++;
+                            }
+                        }
+                        success = true;
+                    } catch(e) {
+                        if (e.message === "429_RATE_LIMIT") {
+                            retryCount++;
+                            let waitTime = retryCount * 8000;
+                            statusText.innerText = `⚠️ Hız Limiti (429)! ${waitTime/1000}sn mola...`;
+                            await new Promise(r => setTimeout(r, waitTime));
+                        } else break;
+                    }
+                }
+                await new Promise(r => setTimeout(r, 3500)); 
             }
 
             if(updatedCount > 0) {
@@ -785,10 +787,12 @@
                 let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`; let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
                 let success = false; let retryCount = 0;
 
-                while (!success && retryCount < 2) {
+                while (!success && retryCount < 3) {
                     try {
                         let response = await fetch(proxyUrl);
-                        if (response.status === 429) throw new Error("429_RATE_LIMIT"); if (!response.ok) throw new Error(`HTTP Error`);
+                        if (response.status === 429) throw new Error("429_RATE_LIMIT"); 
+                        if (!response.ok) throw new Error(`HTTP Error`);
+                        
                         let pageText = await response.text();
                         if (pageText) {
                             let regex = /\{[^}]*boss:"([^"]+)"[^}]*timestamp:(\d+)[^}]*\}/g; let match;
@@ -799,9 +803,17 @@
                             }
                             success = true; 
                         }
-                    } catch (error) { if (error.message === "429_RATE_LIMIT") { retryCount++; statusText.innerText = `⚠️ 429 Hızı Aşıldı. 5sn mola...`; await new Promise(resolve => setTimeout(resolve, 5000)); } else break; }
+                    } catch (error) { 
+                        if (error.message === "429_RATE_LIMIT") { 
+                            retryCount++; 
+                            let waitTime = retryCount * 8000;
+                            statusText.innerText = `⚠️ 429 Hızı Aşıldı. ${waitTime/1000}sn mola...`; 
+                            await new Promise(resolve => setTimeout(resolve, waitTime)); 
+                        } else break; 
+                    }
                 }
-                if (success) renderUI(); await new Promise(resolve => setTimeout(resolve, 2500));
+                if (success) renderUI(); 
+                await new Promise(resolve => setTimeout(resolve, 3500));
             }
             if (updatedCount > 0) try { await saveDataToCloud(); } catch(e){} 
             syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
