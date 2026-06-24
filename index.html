@@ -102,11 +102,16 @@
         .member-item.tracker { border-left: 2px solid var(--accent-gold); }
         .member-item:hover .delete-btn { opacity: 1; pointer-events: auto; }
 
+        /* YENİ: Gizli ve Hover Animasyonlu Drop Zone */
         .empty-drop-zone {
             display: flex; justify-content: center; align-items: center;
-            padding: 8px; border: 1px dashed var(--card-border); border-radius: 6px;
+            max-height: 0; opacity: 0; overflow: hidden; padding: 0 8px; 
+            border: 0 dashed var(--card-border); border-radius: 6px; margin: 0;
             color: var(--text-muted); font-size: 12px; font-weight: 600;
-            transition: all 0.2s; margin-top: 5px;
+            transition: all 0.25s ease-out;
+        }
+        .party-card.drag-active .empty-drop-zone {
+            max-height: 40px; opacity: 1; padding: 8px; margin-top: 5px; border-width: 1px;
         }
         .empty-drop-zone.drag-over {
             border-color: var(--success-green); background: rgba(16, 185, 129, 0.1); color: var(--success-green); transform: scale(1.02);
@@ -483,12 +488,9 @@
             resetDate.setDate(now.getDate() - daysToSubtract); return resetDate.getTime();
         }
 
-        // HATA DÜZELTİLDİ: Artık partileri silmek yerine sadece 'done' (tamamlandı) tiklerini kaldırıyor.
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
-                
-                // Sadece tikleri (done durumunu) false yap
                 raidList.forEach(raid => {
                     if (rosterData[raid] && Array.isArray(rosterData[raid])) {
                         rosterData[raid].forEach(party => {
@@ -496,8 +498,7 @@
                         });
                     }
                 });
-
-                rosterData._lastReset = new Date().getTime(); // Zamanı güncelle
+                rosterData._lastReset = new Date().getTime();
                 await saveDataToCloud();
             }
         }
@@ -645,7 +646,13 @@
             }
         }
 
-        function dragStart(ev, raid, pIndex, mIndex) { ev.dataTransfer.setData("text/plain", JSON.stringify({ raid, pIndex, mIndex })); ev.dataTransfer.effectAllowed = "move"; }
+        function dragStart(ev, raid, pIndex, mIndex) { 
+            ev.dataTransfer.setData("text/plain", JSON.stringify({ raid, pIndex, mIndex })); 
+            ev.dataTransfer.effectAllowed = "move"; 
+        }
+        function dragEndMember(ev) {
+            document.querySelectorAll('.party-card').forEach(c => c.classList.remove('drag-active'));
+        }
         function dragOver(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
         function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
         
@@ -654,7 +661,7 @@
             const data = ev.dataTransfer.getData("text/plain"); if (!data) return;
             
             let source;
-            try { source = JSON.parse(data); } catch(e) { return; } // Roster sıralama id'si geldiyse yoksay
+            try { source = JSON.parse(data); } catch(e) { return; }
 
             if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
 
@@ -671,7 +678,20 @@
             renderUI(); try { await saveDataToCloud(); } catch (e) { rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember; renderUI(); }
         }
 
-        // YENİ: Boş Slota Taşıma (Drag & Drop)
+        // YENİ: Partinin üzerine sürüklenirken efekti veren fonksiyonlar
+        function allowCardDrop(ev, card) {
+            ev.preventDefault();
+            card.classList.add('drag-active');
+        }
+        
+        function leaveCardDrop(ev, card) {
+            let rect = card.getBoundingClientRect();
+            // Farenin kart sınırlarından çıkıp çıkmadığını kontrol et
+            if (ev.clientX <= rect.left || ev.clientX >= rect.right || ev.clientY <= rect.top || ev.clientY >= rect.bottom) {
+                card.classList.remove('drag-active');
+            }
+        }
+
         async function dropEmpty(ev, targetRaid, targetPIndex) {
             ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
             const data = ev.dataTransfer.getData("text/plain"); if (!data) return;
@@ -679,7 +699,7 @@
             let source;
             try { source = JSON.parse(data); } catch(e) { return; }
 
-            if (source.raid === targetRaid && source.pIndex === targetPIndex) return; // Kendi partisine boşluğa atıyorsa iptal
+            if (source.raid === targetRaid && source.pIndex === targetPIndex) return;
 
             const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
             const targetPartyReq = rosterData[targetRaid][targetPIndex].reqGS || RAID_DIFFICULTIES[targetRaid]["NM"];
@@ -687,7 +707,6 @@
 
             if (sGS < targetPartyReq) { alert(`⚠️ TAŞIMA İPTAL: GS yetersiz! (Min: ${targetPartyReq})`); return; }
 
-            // Taşımayı yap
             rosterData[targetRaid][targetPIndex].members.push(sourceMember);
             rosterData[source.raid][source.pIndex].members.splice(source.mIndex, 1);
             
@@ -695,24 +714,12 @@
             try { await saveDataToCloud(); } catch (e) { alert("Buluta kaydedilirken hata oluştu."); }
         }
 
-        // Roster Tablosu Satır Sürükleme Fonksiyonları
-        function dragRosterRow(ev, index) {
-            ev.dataTransfer.setData("text/plain", index);
-            ev.dataTransfer.effectAllowed = "move";
-        }
-        
-        function allowDropRosterRow(ev) {
-            ev.preventDefault();
-            ev.currentTarget.style.backgroundColor = "rgba(212, 175, 55, 0.15)";
-        }
-        
-        function leaveDropRosterRow(ev) {
-            ev.currentTarget.style.backgroundColor = "";
-        }
+        function dragRosterRow(ev, index) { ev.dataTransfer.setData("text/plain", index); ev.dataTransfer.effectAllowed = "move"; }
+        function allowDropRosterRow(ev) { ev.preventDefault(); ev.currentTarget.style.backgroundColor = "rgba(212, 175, 55, 0.15)"; }
+        function leaveDropRosterRow(ev) { ev.currentTarget.style.backgroundColor = ""; }
         
         async function dropRosterRow(ev, targetIndex) {
-            ev.preventDefault();
-            ev.currentTarget.style.backgroundColor = "";
+            ev.preventDefault(); ev.currentTarget.style.backgroundColor = "";
             let sourceIndex = ev.dataTransfer.getData("text/plain");
             if (sourceIndex === "" || sourceIndex == targetIndex) return;
             sourceIndex = parseInt(sourceIndex);
@@ -721,16 +728,10 @@
             let movedItem = roster.splice(sourceIndex, 1)[0];
             roster.splice(targetIndex, 0, movedItem);
             
-            renderBilgeRosterAnalysis();
-            renderAdminRosters();
-            renderUI();
+            renderBilgeRosterAnalysis(); renderAdminRosters(); renderUI();
             
             document.getElementById('sync-status').innerText = "☁️ Sıralama kaydediliyor...";
-            try { 
-                await saveDataToCloud(); 
-                document.getElementById('sync-status').innerText = "✅ Sıralama kaydedildi.";
-                setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000);
-            } catch(e) {}
+            try { await saveDataToCloud(); document.getElementById('sync-status').innerText = "✅ Sıralama kaydedildi."; setTimeout(() => { document.getElementById('sync-status').innerText = 'Sistem Hazır.'; }, 2000); } catch(e) {}
         }
 
         async function togglePartyStatus(raid, pIndex, isChecked) {
@@ -825,7 +826,10 @@
                         let cleanName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
 
                         let cardHTML = `
-                            <div class="party-card ${party.done ? 'completed' : ''}">
+                            <div class="party-card ${party.done ? 'completed' : ''}"
+                                 ondragover="allowCardDrop(event, this)" 
+                                 ondragleave="leaveCardDrop(event, this)" 
+                                 ondrop="this.classList.remove('drag-active')">
                                 <div class="party-header">
                                     <div class="party-header-left">
                                         <span class="party-title">${cleanName} <span class="diff-badge diff-${diffLabel.toLowerCase()}">${diffLabel}</span></span>
@@ -844,7 +848,9 @@
                                 
                                 cardHTML += `
                                     <li class="member-item" title="Takaslamak için sürükleyin" draggable="true"
-                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
+                                        ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" 
+                                        ondragend="dragEndMember(event)"
+                                        ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
                                         <div class="member-info">
                                             <img src="Class Icons/${displayClass}.png" class="class-icon" title="${displayClass}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; this.style.display='none';">
                                             <span class="member-name">${member.name}</span>
@@ -857,7 +863,6 @@
                             });
                         }
                         
-                        // BOŞ SLOTA TAŞIMA BÖLÜMÜ
                         cardHTML += `
                                     <li class="empty-drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropEmpty(event, '${raid}', ${pIndex})">
                                         <span>+ Boş Slota Taşı</span>
