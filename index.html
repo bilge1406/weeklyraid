@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi (Cloud)</title>
+    <title>Lost Ark Parti Takipçisi</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -19,20 +19,7 @@
             --modal-bg: rgba(10, 10, 12, 0.90);
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(225, 29, 72, 0.05), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.05), transparent 25%);
-            color: var(--text-main);
-            margin: 0;
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 40px 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
 
         h1 { font-family: 'Rajdhani', sans-serif; font-size: 3rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; text-shadow: 0 0 15px rgba(212, 175, 55, 0.3); text-align: center; }
         h1 span { color: var(--accent-gold); }
@@ -44,8 +31,6 @@
         .sync-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4); }
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
-        .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
-        .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
         .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
 
@@ -77,10 +62,6 @@
         .member-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 6px; font-size: 14px; cursor: grab; user-select: none; transition: all 0.2s; border: 1px solid transparent; }
         .member-item:active { cursor: grabbing; }
         .member-item.drag-over { border: 1px dashed var(--accent-gold); background: rgba(212, 175, 55, 0.1) !important; transform: scale(1.02); }
-        .member-item.roster-bg-bilge { background: linear-gradient(90deg, rgba(225, 29, 72, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid var(--accent-red); }
-        .member-item.roster-bg-esin { background: linear-gradient(90deg, rgba(236, 72, 153, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid #ec4899; }
-        .member-item.roster-bg-zerador { background: linear-gradient(90deg, rgba(249, 115, 22, 0.15), rgba(255,255,255,0.02)); border-left: 2px solid #f97316; }
-
         .member-item:hover .delete-btn { opacity: 1; pointer-events: auto; }
         .member-info { display: flex; align-items: center; gap: 8px; }
         .class-icon { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; }
@@ -88,7 +69,6 @@
         .member-gs { font-size: 11px; color: var(--accent-gold); font-weight: 600; margin-left: 5px; cursor: pointer; padding: 2px 4px; border-radius: 4px; transition: all 0.2s; }
         .member-gs:hover { background: rgba(212, 175, 55, 0.2); color: #fff; }
         .member-region { font-size: 10px; color: var(--text-muted); background: #1e1e24; padding: 2px 4px; border-radius: 4px; }
-
         .delete-btn { background: transparent; color: var(--accent-red); border: none; font-size: 14px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.2s; padding: 0 5px; }
         .delete-btn:hover { color: #fff; text-shadow: 0 0 5px var(--accent-red); }
 
@@ -97,11 +77,9 @@
 
         .add-party-btn { background: rgba(255, 255, 255, 0.02); border: 2px dashed var(--card-border); color: var(--text-muted); width: 100%; padding: 15px; border-radius: 8px; cursor: pointer; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; text-transform: uppercase; transition: all 0.2s; letter-spacing: 1px; }
         .add-party-btn:hover { border-color: var(--success-green); color: var(--success-green); background: rgba(16, 185, 129, 0.05); }
-
         .status-checkbox { appearance: none; -webkit-appearance: none; width: 26px; height: 26px; background-color: transparent; border: 2px solid var(--text-muted); border-radius: 6px; cursor: pointer; position: relative; transition: all 0.2s; }
         .status-checkbox:checked { background-color: var(--success-green); border-color: var(--success-green); box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
         .status-checkbox:checked::after { content: '✔'; position: absolute; color: white; font-size: 16px; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; }
-
         .loading-text { text-align: center; color: var(--accent-gold); font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
 
@@ -111,7 +89,6 @@
         .modal-box-large { max-width: 1400px; height: 90vh; }
         .modal-box-medium { max-width: 800px; height: 80vh; } 
         @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
         .modal-title { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; color: var(--accent-gold); margin: 0; text-align: center; text-transform: uppercase; }
         .modal-input { width: 100%; padding: 12px; background: #1e1e24; border: 1px solid var(--card-border); color: var(--text-main); border-radius: 6px; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
         .modal-input:focus { border-color: var(--accent-gold); }
@@ -125,10 +102,8 @@
         .modal-btn-confirm:hover { background: #eab308; box-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
         .btn-raw { background: #3b82f6; color: white; font-size: 0.9rem; padding: 8px 15px; border-radius: 6px; cursor: pointer; border: none; font-family: 'Rajdhani', sans-serif; font-weight: bold; transition: all 0.2s; }
         .btn-raw:hover { background: #2563eb; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-
         .admin-content { display: flex; gap: 20px; height: calc(100% - 100px); overflow: hidden; }
         .admin-panel-col { flex: 1; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; border: 1px solid var(--card-border); overflow-y: auto;}
-        
         .admin-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .admin-table th, .admin-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--card-border); }
         .admin-table th { color: var(--accent-gold); position: sticky; top: 0; background: var(--card-bg); z-index: 1;}
@@ -136,18 +111,15 @@
         .admin-table tr:hover { background: rgba(255,255,255,0.05); }
         .status-done { color: var(--success-green); font-weight: bold; }
         .status-wait { color: var(--accent-red); font-weight: bold; }
-
         .roster-section { display: flex; flex-direction: column; gap: 15px; }
         .roster-group { background: rgba(255,255,255,0.02); border: 1px solid var(--card-border); border-radius: 8px; padding: 15px; }
         .roster-group h4 { color: var(--accent-gold); margin: 0 0 10px 0; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; text-transform: uppercase; border-bottom: 1px dashed var(--card-border); padding-bottom: 5px; }
         .roster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .roster-member { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 8px 10px; border-radius: 6px; font-size: 13px; border: 1px solid var(--card-border); }
-        
         .add-roster-char-btn { width: 100%; margin-top: 10px; background: transparent; border: 1px dashed var(--card-border); color: var(--text-muted); padding: 8px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.2s; margin-top: auto; }
         .add-roster-char-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(212, 175, 55, 0.05); }
         .roster-del-btn { background: transparent; color: var(--accent-red); border: none; cursor: pointer; margin-left: 5px; opacity: 0.3; transition: all 0.2s; font-size: 12px; }
         .roster-del-btn:hover { opacity: 1; text-shadow: 0 0 5px var(--accent-red); }
-
         #admin-json-editor { width: 100%; flex-grow: 1; background: #0a0a0c; color: #10b981; border: 1px solid var(--card-border); padding: 15px; font-family: monospace; font-size: 13px; border-radius: 6px; resize: none; }
         .empty-drop-zone { display: flex; justify-content: center; align-items: center; max-height: 0; opacity: 0; overflow: hidden; padding: 0 8px; border: 0 dashed var(--card-border); border-radius: 6px; margin: 0; color: var(--text-muted); font-size: 12px; font-weight: 600; transition: all 0.25s ease-out; }
         .party-card.drag-active .empty-drop-zone { max-height: 40px; opacity: 1; padding: 8px; margin-top: 5px; border-width: 1px; }
@@ -185,59 +157,19 @@
         <div class="modal-box modal-box-small">
             <h3 class="modal-title" id="addCharTitle">Karakter Ekle</h3>
             <p style="margin:0; font-size: 13px; color: var(--text-muted); text-align: center;">Sistem tanıdığı karakterlerin GS ve Sınıfını otomatik çeker.</p>
-            
             <input type="text" id="modalCharName" class="modal-input" placeholder="Karakter Adı" autocomplete="off" oninput="handleCharNameInput(this.value)">
-            
             <select id="modalCharClass" class="modal-select">
                 <option value="Bilinmiyor">Sınıf Seçin...</option>
-                <optgroup label="Support">
-                    <option value="Paladin">Paladin</option>
-                    <option value="Bard">Bard</option>
-                    <option value="Artist">Artist</option>
-                    <option value="Valkyrie">Valkyrie</option>
-                </optgroup>
-                <optgroup label="DPS (Warrior)">
-                    <option value="Berserker">Berserker</option>
-                    <option value="Destroyer">Destroyer</option>
-                    <option value="Gunlancer">Gunlancer</option>
-                    <option value="Slayer">Slayer</option>
-                </optgroup>
-                <optgroup label="DPS (Martial Artist)">
-                    <option value="Glaivier">Glaivier</option>
-                    <option value="Scrapper">Scrapper</option>
-                    <option value="Soulfist">Soulfist</option>
-                    <option value="Striker">Striker</option>
-                    <option value="Wardancer">Wardancer</option>
-                    <option value="Breaker">Breaker</option>
-                </optgroup>
-                <optgroup label="DPS (Gunner)">
-                    <option value="Artillerist">Artillerist</option>
-                    <option value="Deadeye">Deadeye</option>
-                    <option value="Gunslinger">Gunslinger</option>
-                    <option value="Machinist">Machinist</option>
-                    <option value="Sharpshooter">Sharpshooter</option>
-                </optgroup>
-                <optgroup label="DPS (Mage & Assassin)">
-                    <option value="Arcanist">Arcanist</option>
-                    <option value="Sorceress">Sorceress</option>
-                    <option value="Summoner">Summoner</option>
-                    <option value="Deathblade">Deathblade</option>
-                    <option value="Shadowhunter">Shadowhunter</option>
-                    <option value="Reaper">Reaper</option>
-                    <option value="Souleater">Souleater</option>
-                </optgroup>
-                <optgroup label="DPS (Specialist)">
-                    <option value="Aeromancer">Aeromancer</option>
-                    <option value="Wildsoul">Wildsoul</option>
-                </optgroup>
-                <optgroup label="Guardian">
-                    <option value="Guardianknight">Guardianknight</option>
-                </optgroup>
+                <optgroup label="Support"><option value="Paladin">Paladin</option><option value="Bard">Bard</option><option value="Artist">Artist</option><option value="Valkyrie">Valkyrie</option></optgroup>
+                <optgroup label="DPS (Warrior)"><option value="Berserker">Berserker</option><option value="Destroyer">Destroyer</option><option value="Gunlancer">Gunlancer</option><option value="Slayer">Slayer</option></optgroup>
+                <optgroup label="DPS (Martial Artist)"><option value="Glaivier">Glaivier</option><option value="Scrapper">Scrapper</option><option value="Soulfist">Soulfist</option><option value="Striker">Striker</option><option value="Wardancer">Wardancer</option><option value="Breaker">Breaker</option></optgroup>
+                <optgroup label="DPS (Gunner)"><option value="Artillerist">Artillerist</option><option value="Deadeye">Deadeye</option><option value="Gunslinger">Gunslinger</option><option value="Machinist">Machinist</option><option value="Sharpshooter">Sharpshooter</option></optgroup>
+                <optgroup label="DPS (Mage & Assassin)"><option value="Arcanist">Arcanist</option><option value="Sorceress">Sorceress</option><option value="Summoner">Summoner</option><option value="Deathblade">Deathblade</option><option value="Shadowhunter">Shadowhunter</option><option value="Reaper">Reaper</option><option value="Souleater">Souleater</option></optgroup>
+                <optgroup label="DPS (Specialist)"><option value="Aeromancer">Aeromancer</option><option value="Wildsoul">Wildsoul</option></optgroup>
+                <optgroup label="Guardian"><option value="Guardianknight">Guardianknight</option></optgroup>
             </select>
-
             <input type="number" id="modalCharGS" class="modal-input" placeholder="Gearscore (Örn: 1720)">
             <span id="addCharError" style="color:var(--accent-red); font-size:13px; font-weight:bold; display:none; text-align:center;"></span>
-            
             <input type="hidden" id="modalContextRaid"><input type="hidden" id="modalContextParty"><input type="hidden" id="modalContextRoster">
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addCharModal').style.display='none'">İptal</button>
@@ -252,49 +184,13 @@
             <input type="hidden" id="editClassCharName">
             <select id="editClassSelect" class="modal-select">
                 <option value="Bilinmiyor">Sınıf Seçin...</option>
-                <optgroup label="Support">
-                    <option value="Paladin">Paladin</option>
-                    <option value="Bard">Bard</option>
-                    <option value="Artist">Artist</option>
-                    <option value="Valkyrie">Valkyrie</option>
-                </optgroup>
-                <optgroup label="DPS (Warrior)">
-                    <option value="Berserker">Berserker</option>
-                    <option value="Destroyer">Destroyer</option>
-                    <option value="Gunlancer">Gunlancer</option>
-                    <option value="Slayer">Slayer</option>
-                </optgroup>
-                <optgroup label="DPS (Martial Artist)">
-                    <option value="Glaivier">Glaivier</option>
-                    <option value="Scrapper">Scrapper</option>
-                    <option value="Soulfist">Soulfist</option>
-                    <option value="Striker">Striker</option>
-                    <option value="Wardancer">Wardancer</option>
-                    <option value="Breaker">Breaker</option>
-                </optgroup>
-                <optgroup label="DPS (Gunner)">
-                    <option value="Artillerist">Artillerist</option>
-                    <option value="Deadeye">Deadeye</option>
-                    <option value="Gunslinger">Gunslinger</option>
-                    <option value="Machinist">Machinist</option>
-                    <option value="Sharpshooter">Sharpshooter</option>
-                </optgroup>
-                <optgroup label="DPS (Mage & Assassin)">
-                    <option value="Arcanist">Arcanist</option>
-                    <option value="Sorceress">Sorceress</option>
-                    <option value="Summoner">Summoner</option>
-                    <option value="Deathblade">Deathblade</option>
-                    <option value="Shadowhunter">Shadowhunter</option>
-                    <option value="Reaper">Reaper</option>
-                    <option value="Souleater">Souleater</option>
-                </optgroup>
-                <optgroup label="DPS (Specialist)">
-                    <option value="Aeromancer">Aeromancer</option>
-                    <option value="Wildsoul">Wildsoul</option>
-                </optgroup>
-                <optgroup label="Guardian">
-                    <option value="Guardianknight">Guardianknight</option>
-                </optgroup>
+                <optgroup label="Support"><option value="Paladin">Paladin</option><option value="Bard">Bard</option><option value="Artist">Artist</option><option value="Valkyrie">Valkyrie</option></optgroup>
+                <optgroup label="DPS (Warrior)"><option value="Berserker">Berserker</option><option value="Destroyer">Destroyer</option><option value="Gunlancer">Gunlancer</option><option value="Slayer">Slayer</option></optgroup>
+                <optgroup label="DPS (Martial Artist)"><option value="Glaivier">Glaivier</option><option value="Scrapper">Scrapper</option><option value="Soulfist">Soulfist</option><option value="Striker">Striker</option><option value="Wardancer">Wardancer</option><option value="Breaker">Breaker</option></optgroup>
+                <optgroup label="DPS (Gunner)"><option value="Artillerist">Artillerist</option><option value="Deadeye">Deadeye</option><option value="Gunslinger">Gunslinger</option><option value="Machinist">Machinist</option><option value="Sharpshooter">Sharpshooter</option></optgroup>
+                <optgroup label="DPS (Mage & Assassin)"><option value="Arcanist">Arcanist</option><option value="Sorceress">Sorceress</option><option value="Summoner">Summoner</option><option value="Deathblade">Deathblade</option><option value="Shadowhunter">Shadowhunter</option><option value="Reaper">Reaper</option><option value="Souleater">Souleater</option></optgroup>
+                <optgroup label="DPS (Specialist)"><option value="Aeromancer">Aeromancer</option><option value="Wildsoul">Wildsoul</option></optgroup>
+                <optgroup label="Guardian"><option value="Guardianknight">Guardianknight</option></optgroup>
             </select>
             <div class="modal-buttons">
                 <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editClassModal').style.display='none'">İptal</button>
@@ -360,7 +256,6 @@
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-raw" style="background:#10b981;" onclick="openDbTableModal()">📊 Tüm Partiler</button>
                             <button class="btn-raw" onclick="openRawJsonModal()">🛠️ Raw JSON</button>
-                            <button class="btn-raw" style="background:#d4af37; color:#000;" onclick="manualReset()">📅 Manuel Reset</button>
                         </div>
                     </div>
                     <div id="bilge-analysis-container" style="overflow-y:auto;">Tablo Yükleniyor...</div>
@@ -455,29 +350,13 @@
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
-                performWeeklyReset();
-            }
-        }
-
-        async function manualReset() {
-            if(confirm("Haftalık reset işlemini şimdi manuel başlatmak istiyor musunuz? (Sadece tikler kalkar)")) {
-                performWeeklyReset();
-            }
-        }
-
-        async function performWeeklyReset() {
-            raidList.forEach(raid => {
-                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
-                    rosterData[raid].forEach(party => {
-                        party.done = false;
-                    });
-                }
-            });
-            rosterData._lastReset = new Date().getTime();
-            await saveDataToCloud();
-            renderUI();
-            if(document.getElementById('adminModal').style.display === 'flex') {
-                renderBilgeRosterAnalysis();
+                raidList.forEach(raid => {
+                    if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                        rosterData[raid].forEach(party => { party.done = false; });
+                    }
+                });
+                rosterData._lastReset = new Date().getTime();
+                await saveDataToCloud();
             }
         }
 
@@ -820,24 +699,6 @@
             collapsedRaids[raid] = !collapsedRaids[raid]; renderUI();
         }
 
-        // YENİ: Zorluk Değiştirme
-        async function cycleDifficulty(raid, pIndex) {
-            const diffs = RAID_DIFFICULTIES[raid];
-            const diffKeys = Object.keys(diffs).sort((a, b) => diffs[a] - diffs[b]);
-            const currentReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
-            
-            let currentIndex = 0;
-            for(let i=0; i<diffKeys.length; i++) {
-                if (currentReqGS >= diffs[diffKeys[i]]) currentIndex = i;
-            }
-            
-            let nextIndex = (currentIndex + 1) % diffKeys.length;
-            rosterData[raid][pIndex].reqGS = diffs[diffKeys[nextIndex]];
-            
-            renderUI();
-            try { await saveDataToCloud(); } catch(e){}
-        }
-
         function renderUI() {
             const container = document.getElementById('raid-container'); 
             if (!rosterData || typeof rosterData !== 'object') return;
@@ -910,16 +771,8 @@
                                 let displayGS = getActualGS(member.name, member.gs);
                                 let displayClass = getActualClass(member.name, member.charClass);
                                 
-                                let rosterBgClass = "";
-                                if (rosterData.customRosters) {
-                                    let nLower = member.name.toLowerCase();
-                                    if (rosterData.customRosters["Bilge Roster"] && rosterData.customRosters["Bilge Roster"].includes(nLower)) rosterBgClass = "roster-bg-bilge";
-                                    else if (rosterData.customRosters["Esin Roster"] && rosterData.customRosters["Esin Roster"].includes(nLower)) rosterBgClass = "roster-bg-esin";
-                                    else if (rosterData.customRosters["Zerador Roster"] && rosterData.customRosters["Zerador Roster"].includes(nLower)) rosterBgClass = "roster-bg-zerador";
-                                }
-
                                 cardHTML += `
-                                    <li class="member-item ${rosterBgClass}" title="Takaslamak için sürükleyin" draggable="true"
+                                    <li class="member-item" title="Takaslamak için sürükleyin" draggable="true"
                                         ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" 
                                         ondragend="dragEndMember(event)"
                                         ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
@@ -950,6 +803,242 @@
                 section.innerHTML = headerHTML + gridHTML;
                 container.appendChild(section);
             });
+        }
+
+        // --- Admin Fonksiyonları ---
+        function openAdminModal() { const pass = prompt("Admin Şifresi:"); if (pass !== "1234") return; renderAdminRosters(); renderBilgeRosterAnalysis(); document.getElementById('adminModal').style.display = 'flex'; }
+        function openDbTableModal() { renderAdminTable(); document.getElementById('dbTableModal').style.display = 'flex'; }
+        
+        function renderBilgeRosterAnalysis() {
+            let bilgeRoster = rosterData.customRosters ? rosterData.customRosters["Bilge Roster"] : null;
+            if (!bilgeRoster) { document.getElementById('bilge-analysis-container').innerHTML = "<p>Boş</p>"; return; }
+            let html = `<table class="admin-table"><tr><th>Karakter</th><th>Armoche</th><th>Kazeros</th><th>Serca</th><th>Cathedral</th></tr>`;
+            bilgeRoster.forEach((charName, index) => {
+                let displayName = charName.charAt(0).toUpperCase() + charName.slice(1);
+                
+                html += `<tr draggable="true" ondragstart="dragRosterRow(event, ${index})" ondragover="allowDropRosterRow(event)" ondragleave="leaveDropRosterRow(event)" ondrop="dropRosterRow(event, ${index})" style="cursor: grab;">
+                            <td style="font-weight:bold; color:#cbd5e1; font-size:14px;"><span style="color:#838392; margin-right:8px; font-size:16px;">☰</span>${displayName}</td>`;
+                
+                raidList.forEach(raid => {
+                    let raidStatus = `<span style="color:#475569; font-weight:600;">- Girilmedi -</span>`;
+                    if (rosterData[raid]) {
+                        for (let party of rosterData[raid]) {
+                            if (party.members.find(m => m.name.toLowerCase() === charName.toLowerCase())) {
+                                let pName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
+                                let doneIcon = party.done ? `<span title="Tamamlandı" style="margin-left:4px; font-size:12px;">✅</span>` : `<span title="Bekliyor" style="margin-left:4px; font-size:12px; filter:grayscale(1); opacity:0.5;">⏳</span>`;
+                                
+                                if (party.members.length > 1) {
+                                    let others = party.members.filter(m => m.name.toLowerCase() !== charName.toLowerCase()).map(m => m.name).join(', ');
+                                    raidStatus = `<span style="color:var(--success-green); font-weight:bold; cursor:help;" title="Ekip: ${others}">Ekiple</span>${doneIcon}<br><span style="font-size:10px; color:#838392;">(${pName})</span>`;
+                                } else { 
+                                    raidStatus = `<span style="color:var(--accent-gold); font-weight:bold;">Tek Başına</span>${doneIcon}<br><span style="font-size:10px; color:#838392;">(${pName})</span>`; 
+                                }
+                                break; 
+                            }
+                        }
+                    }
+                    html += `<td>${raidStatus}</td>`;
+                });
+                html += `</tr>`;
+            });
+            document.getElementById('bilge-analysis-container').innerHTML = html + `</table>`;
+        }
+
+        function renderAdminTable() {
+            let html = `<table class="admin-table"><tr><th>Raid</th><th>Parti İsmi</th><th>Min GS</th><th>Üyeler</th><th>Durum</th></tr>`;
+            raidList.forEach(raid => {
+                if (rosterData[raid]) {
+                    rosterData[raid].forEach(party => {
+                        let mStr = party.members.map(m => `${m.name}`).join(", ");
+                        let sHtml = party.done ? `<span class="status-done">Bitti</span>` : `<span class="status-wait">Bekliyor</span>`;
+                        let diff = (party.reqGS >= RAID_DIFFICULTIES[raid]["NMR"]) ? "NMR" : (party.reqGS >= RAID_DIFFICULTIES[raid]["HM"]) ? "HM" : "NM";
+                        html += `<tr><td style="text-transform:uppercase; font-weight:bold;">${raid}</td><td>${party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim()} <span class="diff-badge diff-${diff.toLowerCase()}">${diff}</span></td><td>${party.reqGS||"-"}</td><td>${mStr}</td><td>${sHtml}</td></tr>`;
+                    });
+                }
+            });
+            document.getElementById('admin-table-container').innerHTML = html + `</table>`;
+        }
+
+        function renderAdminRosters() {
+            if (!rosterData.customRosters) return; let html = '';
+            for (const [rosterName, members] of Object.entries(rosterData.customRosters)) {
+                html += `<div class="roster-group"><h4>${rosterName} <button class="roster-del-btn" style="float:right;" onclick="removeRoster('${rosterName}')">🗑️</button></h4><div class="roster-grid">`;
+                members.forEach(member => {
+                    let actualGS = getActualGS(member, 0); 
+                    let actualClass = getActualClass(member, "Bilinmiyor");
+                    let displayName = member.charAt(0).toUpperCase() + member.slice(1);
+                    html += `<div class="roster-member">
+                                <span style="display:flex; align-items:center; gap:6px;">
+                                    <img src="Class Icons/${actualClass}.png" style="width:16px; height:16px; border-radius:3px;" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='; this.style.display='none';">
+                                    <span style="cursor:pointer; border-bottom:1px dashed #cbd5e1;" onclick="editCharacterClass('${member}', '${actualClass}')" title="Sınıfı Düzenle">${displayName}</span> 
+                                    <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')" title="Gruptan Sil">✖</button>
+                                </span>
+                                <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})" title="GS Düzenle">[${actualGS}]</span>
+                            </div>`;
+                });
+                html += `</div><button class="add-roster-char-btn" onclick="addRosterCharacter('${rosterName}')">+ Ekle</button></div>`;
+            }
+            html += `<button class="add-party-btn" style="margin-top: 15px;" onclick="openNewRosterModal()">+ Yeni Roster Grubu</button>`;
+            document.getElementById('admin-rosters-container').innerHTML = html;
+        }
+
+        function openRawJsonModal() { document.getElementById('admin-json-editor').value = JSON.stringify(rosterData, null, 4); document.getElementById('rawJsonModal').style.display = 'flex'; }
+        async function saveRawJsonData() {
+            try { rosterData = JSON.parse(document.getElementById('admin-json-editor').value); renderUI(); if (document.getElementById('adminModal').style.display === 'flex') { renderAdminTable(); renderAdminRosters(); renderBilgeRosterAnalysis(); }
+                await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) });
+                document.getElementById('rawJsonModal').style.display = 'none'; document.getElementById('sync-status').innerText = "✅ Veritabanı başarıyla güncellendi.";
+            } catch (e) { alert("HATA: JSON formatı bozuk!"); }
+        }
+
+        async function autoUpdateAllGS() {
+            const statusText = document.getElementById('sync-status');
+            const btn = document.getElementById('autoGsBtnAdmin');
+            const originalBtnText = btn ? btn.innerHTML : "🚀 Oto GS Güncelle";
+
+            statusText.innerText = "⏳ Tüm karakterlerin GS bilgileri çekiliyor...";
+            statusText.style.color = "var(--accent-gold)";
+            if(btn) { btn.disabled = true; btn.style.opacity = "0.5"; btn.innerHTML = "⏳ Hesaplanıyor..."; }
+            
+            let charsToUpdate = {}; 
+            raidList.forEach(raid => {
+                if (rosterData[raid]) {
+                    rosterData[raid].forEach(party => {
+                        party.members.forEach(m => { charsToUpdate[m.name.toLowerCase()] = m.region || "CE"; });
+                    });
+                }
+            });
+            if (rosterData.customRosters) {
+                Object.values(rosterData.customRosters).forEach(members => {
+                    members.forEach(mName => { if (!charsToUpdate[mName.toLowerCase()]) charsToUpdate[mName.toLowerCase()] = "CE"; });
+                });
+            }
+
+            let charKeys = Object.keys(charsToUpdate);
+            if (charKeys.length === 0) {
+                if(btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = originalBtnText; }
+                return;
+            }
+
+            let updatedCount = 0;
+            
+            for (let i = 0; i < charKeys.length; i++) {
+                let cName = charKeys[i];
+                let cRegion = charsToUpdate[cName];
+                
+                statusText.innerText = `⏳ GS Güncelleniyor: ${cName} [${i+1}/${charKeys.length}]`;
+                if(btn) btn.innerHTML = `⏳ ${cName} [${i+1}/${charKeys.length}]`;
+                
+                let targetUrl = `https://lostark.bible/character/${cRegion}/${cName}`;
+                let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
+                
+                let success = false; let retryCount = 0;
+                
+                while (!success && retryCount < 3) {
+                    try {
+                        let response = await fetch(proxyUrl);
+                        if (response.status === 429) throw new Error("429_RATE_LIMIT");
+                        if (!response.ok) throw new Error("HTTP Error");
+                        
+                        let htmlText = await response.text();
+                        let gsMatch = htmlText.match(/(?:Item Level|iLvl|itemLevel|itemLevelValue)[^\d]*(\d{4}(?:\.\d{1,2})?)/i) || htmlText.match(/(\d{4}\.\d{2})/);
+
+                        if (gsMatch) {
+                            let parsedGS = parseFloat(gsMatch[1] || gsMatch[0]);
+                            if (!isNaN(parsedGS) && parsedGS >= 1600 && parsedGS <= 1800) {
+                                if (!rosterData.customGS) rosterData.customGS = {};
+                                rosterData.customGS[cName] = parsedGS;
+                                updatedCount++;
+                            }
+                        }
+                        success = true;
+                    } catch(e) {
+                        if (e.message === "429_RATE_LIMIT") {
+                            retryCount++;
+                            let waitTime = retryCount * 15000; 
+                            statusText.innerText = `⚠️ Hız Limiti (429)! ${waitTime/1000}sn mola...`;
+                            if(btn) btn.innerHTML = `⚠️ Mola (${waitTime/1000}s)`;
+                            await new Promise(r => setTimeout(r, waitTime));
+                        } else break;
+                    }
+                }
+                let baseDelay = Math.floor(Math.random() * 2500) + 4500;
+                await new Promise(r => setTimeout(r, baseDelay)); 
+            }
+
+            if(updatedCount > 0) {
+                statusText.innerText = "☁️ Yeni GS değerleri buluta kaydediliyor...";
+                if(btn) btn.innerHTML = "☁️ Kaydediliyor...";
+                await saveDataToCloud();
+                renderUI();
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    renderAdminTable(); renderAdminRosters(); renderBilgeRosterAnalysis();
+                }
+            }
+
+            if(btn) { btn.disabled = false; btn.style.opacity = "1"; btn.innerHTML = `✅ ${updatedCount} Güncellendi!`; }
+            statusText.innerText = `✅ İşlem bitti. ${updatedCount} karakterin GS'si güncellendi.`;
+            statusText.style.color = "var(--success-green)";
+            
+            setTimeout(() => { 
+                statusText.innerText = 'Sistem Hazır.'; 
+                statusText.style.color = 'var(--accent-gold)'; 
+                if(btn) btn.innerHTML = originalBtnText;
+            }, 5000);
+        }
+
+        async function syncAllParties() {
+            const statusText = document.getElementById('sync-status'); statusText.innerText = "⏳ Tarama öncesi güncel veriler çekiliyor..."; statusText.style.color = "var(--accent-gold)";
+            await loadDataFromCloud(true); const lastResetTime = getLastResetTimestamp(); let updatedCount = 0; let fetchQueue = [];
+            
+            const trackers = rosterData.customRosters && rosterData.customRosters["Bilge Roster"] ? rosterData.customRosters["Bilge Roster"] : [];
+            
+            raidList.forEach(raid => { if (rosterData[raid]) { rosterData[raid].forEach((party, pIndex) => {
+                if (!party.done) { let tracker = party.members.find(m => trackers && trackers.includes(m.name.toLowerCase())); if (tracker) fetchQueue.push({ raid, pIndex, partyName: party.name, tracker }); }
+            }); }});
+
+            if (fetchQueue.length === 0) { statusText.innerText = "✅ Bütün partiler zaten tamamlanmış!"; statusText.style.color = "var(--success-green)"; return; }
+            const syncBtn = document.querySelector('.sync-btn'); syncBtn.disabled = true; syncBtn.style.opacity = "0.5";
+
+            for (let i = 0; i < fetchQueue.length; i++) {
+                let task = fetchQueue[i]; let char = task.tracker;
+                statusText.innerText = `⏳ Taranıyor: ${task.partyName.replace(/\s*\((NM|HM|NMR)\)/i, '')} (${task.raid.toUpperCase()}) [${i+1}/${fetchQueue.length}]`;
+                let targetUrl = `https://lostark.bible/character/${char.region}/${char.name}/logs`; let proxyUrl = `${WORKER_URL}/?url=${encodeURIComponent(targetUrl)}`;
+                let success = false; let retryCount = 0;
+
+                while (!success && retryCount < 3) {
+                    try {
+                        let response = await fetch(proxyUrl);
+                        if (response.status === 429) throw new Error("429_RATE_LIMIT"); 
+                        if (!response.ok) throw new Error(`HTTP Error`);
+                        
+                        let pageText = await response.text();
+                        if (pageText) {
+                            let regex = /\{[^}]*boss:"([^"]+)"[^}]*timestamp:(\d+)[^}]*\}/g; let match;
+                            while ((match = regex.exec(pageText)) !== null) {
+                                let bossName = match[1].toLowerCase(); let killTime = parseInt(match[2]);
+                                let searchKeyword = (task.raid === "cathedral") ? "arcenos" : task.raid;
+                                if (killTime > lastResetTime && bossName.includes(searchKeyword)) { rosterData[task.raid][task.pIndex].done = true; updatedCount++; break; }
+                            }
+                            success = true; 
+                        }
+                    } catch (error) { 
+                        if (error.message === "429_RATE_LIMIT") { 
+                            retryCount++; 
+                            let waitTime = retryCount * 15000;
+                            statusText.innerText = `⚠️ 429 Hızı Aşıldı. ${waitTime/1000}sn mola...`; 
+                            await new Promise(resolve => setTimeout(resolve, waitTime)); 
+                        } else break; 
+                    }
+                }
+                
+                let baseDelay = Math.floor(Math.random() * 2500) + 4500;
+                if (success) renderUI(); 
+                await new Promise(resolve => setTimeout(resolve, baseDelay));
+            }
+            if (updatedCount > 0) try { await saveDataToCloud(); } catch(e){} 
+            syncBtn.disabled = false; syncBtn.style.opacity = "1"; statusText.style.color = "var(--success-green)";
+            statusText.innerText = updatedCount > 0 ? `✅ Tarama bitti! ${updatedCount} adet parti tamamladı.` : `✅ Tarama bitti. Yeni tamamlanan yok.`;
+            setTimeout(() => { statusText.innerText = 'Sistem Hazır.'; statusText.style.color = 'var(--accent-gold)'; }, 6000);
         }
 
         loadDataFromCloud();
