@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
 
@@ -67,6 +67,8 @@
         .sync-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4); }
         .cloud-btn { background: linear-gradient(135deg, #3b82f6, #1d4ed8); flex: 1; min-width: 150px;}
         .cloud-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(59, 130, 246, 0.4); }
+        .gs-btn { background: linear-gradient(135deg, #10b981, #047857); flex: 1; min-width: 200px;}
+        .gs-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
         .admin-btn { background: linear-gradient(135deg, #64748b, #334155); flex: 0.5; min-width: 150px;}
         .admin-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(100, 116, 139, 0.4); }
 
@@ -99,6 +101,16 @@
         .member-item.drag-over { border: 1px dashed var(--accent-gold); background: rgba(212, 175, 55, 0.1); transform: scale(1.02); }
         .member-item.tracker { border-left: 2px solid var(--accent-gold); }
         .member-item:hover .delete-btn { opacity: 1; pointer-events: auto; }
+
+        .empty-drop-zone {
+            display: flex; justify-content: center; align-items: center;
+            padding: 8px; border: 1px dashed var(--card-border); border-radius: 6px;
+            color: var(--text-muted); font-size: 12px; font-weight: 600;
+            transition: all 0.2s; margin-top: 5px;
+        }
+        .empty-drop-zone.drag-over {
+            border-color: var(--success-green); background: rgba(16, 185, 129, 0.1); color: var(--success-green); transform: scale(1.02);
+        }
 
         .member-info { display: flex; align-items: center; gap: 8px; }
         
@@ -471,16 +483,21 @@
             resetDate.setDate(now.getDate() - daysToSubtract); return resetDate.getTime();
         }
 
+        // HATA DÜZELTİLDİ: Artık partileri silmek yerine sadece 'done' (tamamlandı) tiklerini kaldırıyor.
         async function checkWeeklyReset() {
             const recentWedTime = getLastResetTimestamp();
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
-                let savedCustomGS = rosterData.customGS || {}; 
-                let savedCustomClasses = rosterData.customClasses || {};
-                let savedRosters = rosterData.customRosters || initDefaultData().customRosters; 
-                rosterData = initDefaultData(); 
-                rosterData.customGS = savedCustomGS; 
-                rosterData.customClasses = savedCustomClasses;
-                rosterData.customRosters = savedRosters;
+                
+                // Sadece tikleri (done durumunu) false yap
+                raidList.forEach(raid => {
+                    if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                        rosterData[raid].forEach(party => {
+                            party.done = false;
+                        });
+                    }
+                });
+
+                rosterData._lastReset = new Date().getTime(); // Zamanı güncelle
                 await saveDataToCloud();
             }
         }
@@ -635,7 +652,11 @@
         async function drop(ev, targetRaid, targetPIndex, targetMIndex) {
             ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
             const data = ev.dataTransfer.getData("text/plain"); if (!data) return;
-            const source = JSON.parse(data); if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
+            
+            let source;
+            try { source = JSON.parse(data); } catch(e) { return; } // Roster sıralama id'si geldiyse yoksay
+
+            if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
 
             const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
             const targetMember = rosterData[targetRaid][targetPIndex].members[targetMIndex];
@@ -650,6 +671,31 @@
             renderUI(); try { await saveDataToCloud(); } catch (e) { rosterData[source.raid][source.pIndex].members[source.mIndex] = sourceMember; rosterData[targetRaid][targetPIndex].members[targetMIndex] = targetMember; renderUI(); }
         }
 
+        // YENİ: Boş Slota Taşıma (Drag & Drop)
+        async function dropEmpty(ev, targetRaid, targetPIndex) {
+            ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
+            const data = ev.dataTransfer.getData("text/plain"); if (!data) return;
+            
+            let source;
+            try { source = JSON.parse(data); } catch(e) { return; }
+
+            if (source.raid === targetRaid && source.pIndex === targetPIndex) return; // Kendi partisine boşluğa atıyorsa iptal
+
+            const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
+            const targetPartyReq = rosterData[targetRaid][targetPIndex].reqGS || RAID_DIFFICULTIES[targetRaid]["NM"];
+            const sGS = getActualGS(sourceMember.name, sourceMember.gs);
+
+            if (sGS < targetPartyReq) { alert(`⚠️ TAŞIMA İPTAL: GS yetersiz! (Min: ${targetPartyReq})`); return; }
+
+            // Taşımayı yap
+            rosterData[targetRaid][targetPIndex].members.push(sourceMember);
+            rosterData[source.raid][source.pIndex].members.splice(source.mIndex, 1);
+            
+            renderUI(); 
+            try { await saveDataToCloud(); } catch (e) { alert("Buluta kaydedilirken hata oluştu."); }
+        }
+
+        // Roster Tablosu Satır Sürükleme Fonksiyonları
         function dragRosterRow(ev, index) {
             ev.dataTransfer.setData("text/plain", index);
             ev.dataTransfer.effectAllowed = "move";
@@ -810,7 +856,16 @@
                                 `;
                             });
                         }
-                        cardHTML += `</ul><button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button></div>`;
+                        
+                        // BOŞ SLOTA TAŞIMA BÖLÜMÜ
+                        cardHTML += `
+                                    <li class="empty-drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropEmpty(event, '${raid}', ${pIndex})">
+                                        <span>+ Boş Slota Taşı</span>
+                                    </li>
+                                </ul>
+                                <button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>
+                            </div>
+                        `;
                         gridHTML += cardHTML;
                     });
                 }
