@@ -407,7 +407,10 @@
                 <div class="admin-panel-col" style="flex: 1;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h4 style="margin:0; color:var(--accent-gold);">👥 Roster Yönetimi</h4>
-                        <button id="autoGsBtnAdmin" class="btn-raw" style="background: linear-gradient(135deg, #10b981, #047857); padding: 6px 12px; font-size:12px; border-radius:4px;" onclick="autoUpdateAllGS()">🚀 Oto GS Güncelle</button>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn-raw" style="background:#d4af37; color:#000; padding: 4px 8px; font-size:10px;" onclick="performWeeklyReset()">📅 Reset</button>
+                            <button id="autoGsBtnAdmin" class="btn-raw" style="background: linear-gradient(135deg, #10b981, #047857); padding: 4px 8px; font-size:10px;" onclick="autoUpdateAllGS()">🚀 Oto GS</button>
+                        </div>
                     </div>
                     <div id="admin-rosters-container" class="roster-section"></div>
                 </div>
@@ -496,14 +499,30 @@
             if (!rosterData._lastReset || rosterData._lastReset < recentWedTime) {
                 raidList.forEach(raid => {
                     if (rosterData[raid] && Array.isArray(rosterData[raid])) {
-                        rosterData[raid].forEach(party => {
-                            party.done = false;
-                        });
+                        rosterData[raid].forEach(party => { party.done = false; });
                     }
                 });
                 rosterData._lastReset = new Date().getTime();
                 await saveDataToCloud();
             }
+        }
+
+        async function performWeeklyReset() {
+            if(!confirm("Haftalık reset işlemini başlatmak istiyor musunuz? (Sadece tikler kalkar)")) return;
+            raidList.forEach(raid => {
+                if (rosterData[raid] && Array.isArray(rosterData[raid])) {
+                    rosterData[raid].forEach(party => {
+                        party.done = false;
+                    });
+                }
+            });
+            rosterData._lastReset = new Date().getTime();
+            await saveDataToCloud();
+            renderUI();
+            if(document.getElementById('adminModal').style.display === 'flex') {
+                renderBilgeRosterAnalysis();
+            }
+            document.getElementById('sync-status').innerText = "✅ Haftalık reset tamamlandı.";
         }
 
         function getActualGS(charName, defaultGS) {
@@ -649,31 +668,12 @@
             }
         }
 
-        // YENİ: Zorluk Değiştirme (NM/HM/NMR Toggle)
-        async function cycleDifficulty(raid, pIndex) {
-            const diffs = RAID_DIFFICULTIES[raid];
-            const diffKeys = Object.keys(diffs).sort((a, b) => diffs[a] - diffs[b]);
-            const currentReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
-            
-            let currentIndex = 0;
-            for(let i=0; i<diffKeys.length; i++) {
-                if (currentReqGS >= diffs[diffKeys[i]]) currentIndex = i;
-            }
-            
-            let nextIndex = (currentIndex + 1) % diffKeys.length;
-            rosterData[raid][pIndex].reqGS = diffs[diffKeys[nextIndex]];
-            
-            renderUI();
-            try { await saveDataToCloud(); } catch(e){}
-        }
-
         function dragStart(ev, raid, pIndex, mIndex) { 
             ev.dataTransfer.setData("text/plain", JSON.stringify({ type: 'member', raid, pIndex, mIndex })); 
             ev.dataTransfer.effectAllowed = "move"; 
             ev.stopPropagation();
         }
         
-        // YENİ: Parti Sürükleme Fonksiyonları
         function dragStartParty(ev, raid, pIndex) {
             ev.dataTransfer.setData("text/plain", JSON.stringify({ type: 'party', raid, pIndex }));
             ev.dataTransfer.effectAllowed = "move";
@@ -717,7 +717,6 @@
             let movedParty = raidParties.splice(source.pIndex, 1)[0];
             raidParties.splice(targetPIndex, 0, movedParty);
             
-            // Otomatik isim düzeltme (1. Parti, 2. Parti...)
             raidParties.forEach((p, idx) => {
                 p.name = p.name.replace(/^\d+\./, `${idx + 1}.`);
             });
@@ -733,7 +732,7 @@
             let source;
             try { source = JSON.parse(data); } catch(e) { return; }
 
-            if (source.type !== 'member') return; // Eğer parti sürükleniyorsa yoksay
+            if (source.type !== 'member') return; 
             if (source.raid === targetRaid && source.pIndex === targetPIndex && source.mIndex === targetMIndex) return;
 
             const sourceMember = rosterData[source.raid][source.pIndex].members[source.mIndex];
@@ -822,12 +821,36 @@
         }
 
         async function togglePartyStatus(raid, pIndex, isChecked) {
-            rosterData[raid][pIndex].done = isChecked; renderUI(); 
+            rosterData[raid][pIndex].done = isChecked; 
+            renderUI(); 
+            
+            if (document.getElementById('adminModal').style.display === 'flex') {
+                renderBilgeRosterAnalysis();
+                renderAdminTable();
+            }
+
             try { 
                 let cloudData = await fetchCloudData();
-                if (cloudData) { if (cloudData[raid] && cloudData[raid][pIndex]) cloudData[raid][pIndex].done = isChecked; rosterData = cloudData; }
-                await saveDataToCloud(); renderUI();
-            } catch(e) { rosterData[raid][pIndex].done = !isChecked; renderUI(); }
+                if (cloudData) { 
+                    if (cloudData[raid] && cloudData[raid][pIndex]) {
+                        cloudData[raid][pIndex].done = isChecked; 
+                    }
+                    rosterData = cloudData; 
+                }
+                await saveDataToCloud(); 
+                renderUI();
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    renderBilgeRosterAnalysis();
+                    renderAdminTable();
+                }
+            } catch(e) { 
+                rosterData[raid][pIndex].done = !isChecked; 
+                renderUI(); 
+                if (document.getElementById('adminModal').style.display === 'flex') {
+                    renderBilgeRosterAnalysis();
+                    renderAdminTable();
+                }
+            }
         }
 
         function openPartyModal(raid) {
@@ -863,6 +886,23 @@
 
         function toggleRaidCollapse(raid) {
             collapsedRaids[raid] = !collapsedRaids[raid]; renderUI();
+        }
+
+        async function cycleDifficulty(raid, pIndex) {
+            const diffs = RAID_DIFFICULTIES[raid];
+            const diffKeys = Object.keys(diffs).sort((a, b) => diffs[a] - diffs[b]);
+            const currentReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
+            
+            let currentIndex = 0;
+            for(let i=0; i<diffKeys.length; i++) {
+                if (currentReqGS >= diffs[diffKeys[i]]) currentIndex = i;
+            }
+            
+            let nextIndex = (currentIndex + 1) % diffKeys.length;
+            rosterData[raid][pIndex].reqGS = diffs[diffKeys[nextIndex]];
+            
+            renderUI();
+            try { await saveDataToCloud(); } catch(e){}
         }
 
         function renderUI() {
@@ -912,17 +952,14 @@
 
                         let cleanName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
 
-                        // YENİ: Parti Kartına Sürükleme (Drag & Drop) Özellikleri Eklendi
                         let cardHTML = `
                             <div class="party-card ${party.done ? 'completed' : ''}"
-                                 draggable="true" 
-                                 ondragstart="dragStartParty(event, '${raid}', ${pIndex})" 
-                                 ondragover="dragOverParty(event)" 
-                                 ondragleave="dragLeaveParty(event)" 
-                                 ondrop="dropParty(event, '${raid}', ${pIndex})">
+                                 ondragover="allowCardDrop(event, this)" 
+                                 ondragleave="leaveCardDrop(event, this)" 
+                                 ondrop="this.classList.remove('drag-active')">
                                 <div class="party-header">
                                     <div class="party-header-left">
-                                        <span style="color:var(--text-muted); cursor:grab; font-size:16px; user-select:none; margin-right:4px;" title="Partiyi Sürükle">☰</span>
+                                        <span style="color:var(--text-muted); cursor:grab; font-size:16px; user-select:none; margin-right:4px;" title="Partiyi Sürükle" draggable="true" ondragstart="dragStartParty(event, '${raid}', ${pIndex})">☰</span>
                                         <span class="party-title">${cleanName} <span class="diff-badge diff-${diffLabel.toLowerCase()}" title="Zorluğu Değiştir (Tıkla)" onclick="cycleDifficulty('${raid}', ${pIndex})">${diffLabel}</span></span>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:10px;">
@@ -939,17 +976,9 @@
                             party.members.forEach((member, mIndex) => {
                                 let displayGS = getActualGS(member.name, member.gs);
                                 let displayClass = getActualClass(member.name, member.charClass);
-                                
-                                let rosterBgClass = "";
-                                if (rosterData.customRosters) {
-                                    let nLower = member.name.toLowerCase();
-                                    if (rosterData.customRosters["Bilge Roster"] && rosterData.customRosters["Bilge Roster"].includes(nLower)) rosterBgClass = "roster-bg-bilge";
-                                    else if (rosterData.customRosters["Esin Roster"] && rosterData.customRosters["Esin Roster"].includes(nLower)) rosterBgClass = "roster-bg-esin";
-                                    else if (rosterData.customRosters["Zerador Roster"] && rosterData.customRosters["Zerador Roster"].includes(nLower)) rosterBgClass = "roster-bg-zerador";
-                                }
 
                                 cardHTML += `
-                                    <li class="member-item ${rosterBgClass}" title="Takaslamak için sürükleyin" draggable="true"
+                                    <li class="member-item" title="Takaslamak için sürükleyin" draggable="true"
                                         ondragstart="dragStart(event, '${raid}', ${pIndex}, ${mIndex})" 
                                         ondragend="dragEndMember(event)"
                                         ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${raid}', ${pIndex}, ${mIndex})">
@@ -982,7 +1011,6 @@
             });
         }
 
-        // --- Admin Fonksiyonları ---
         function openAdminModal() { const pass = prompt("Admin Şifresi:"); if (pass !== "1234") return; renderAdminRosters(); renderBilgeRosterAnalysis(); document.getElementById('adminModal').style.display = 'flex'; }
         function openDbTableModal() { renderAdminTable(); document.getElementById('dbTableModal').style.display = 'flex'; }
         
@@ -999,10 +1027,14 @@
                 raidList.forEach(raid => {
                     let raidStatus = `<span style="color:#475569; font-weight:600;">- Girilmedi -</span>`;
                     if (rosterData[raid]) {
-                        for (let party of rosterData[raid]) {
+                        for (let pIndex = 0; pIndex < rosterData[raid].length; pIndex++) {
+                            let party = rosterData[raid][pIndex];
                             if (party.members.find(m => m.name.toLowerCase() === charName.toLowerCase())) {
                                 let pName = party.name.replace(/\s*\((NM|HM|NMR)\)/i, '').trim();
-                                let doneIcon = party.done ? `<span title="Tamamlandı" style="margin-left:4px; font-size:12px;">✅</span>` : `<span title="Bekliyor" style="margin-left:4px; font-size:12px; filter:grayscale(1); opacity:0.5;">⏳</span>`;
+                                
+                                let doneIcon = party.done 
+                                    ? `<span title="İptal Etmek İçin Tıkla" style="margin-left:4px; font-size:14px; cursor:pointer;" onclick="togglePartyStatus('${raid}', ${pIndex}, false)">✅</span>` 
+                                    : `<span title="Tamamlandı Olarak İşaretle" style="margin-left:4px; font-size:14px; filter:grayscale(1); opacity:0.5; cursor:pointer;" onclick="togglePartyStatus('${raid}', ${pIndex}, true)">⏳</span>`;
                                 
                                 if (party.members.length > 1) {
                                     let others = party.members.filter(m => m.name.toLowerCase() !== charName.toLowerCase()).map(m => m.name).join(', ');
