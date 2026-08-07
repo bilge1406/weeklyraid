@@ -361,10 +361,10 @@
             });
             
             let staticCounter = document.getElementById('static-gold-counter');
-            if(staticCounter) staticCounter.innerHTML = `💰 Statik Ekiple Kazanılan: <span style="color:#fff;">${staticTotalGold.toLocaleString('tr-TR')} Gold</span>`;
+            if(staticCounter) staticCounter.innerHTML = `💰: <span style="color:#fff;">${staticTotalGold.toLocaleString('tr-TR')} Gold</span>`;
             
             let adminCounter = document.getElementById('admin-gold-summary');
-            if(adminCounter) adminCounter.innerHTML = `💰 İlk 6 Karakter (Toplam): ${adminTotalGold.toLocaleString('tr-TR')} G`;
+            if(adminCounter) adminCounter.innerHTML = `💰: ${adminTotalGold.toLocaleString('tr-TR')} G`;
         }
 
         async function performManualReset() {
