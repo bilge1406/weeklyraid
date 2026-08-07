@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lost Ark Parti Takipçisi</title>
+    <title>Lost Ark Parti Takipçisi (Cloud)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&display=swap');
         :root { --bg-color: #0a0a0c; --card-bg: #141418; --card-border: #2a2a35; --text-main: #e2e8f0; --text-muted: #838392; --accent-gold: #d4af37; --accent-red: #e11d48; --success-green: #10b981; --modal-bg: rgba(10, 10, 12, 0.90); }
@@ -84,12 +84,15 @@
         .roster-member { display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); padding: 8px 10px; border-radius: 6px; font-size: 13px; border: 1px solid var(--card-border); }
         .roster-del-btn { background: transparent; color: var(--accent-red); border: none; cursor: pointer; margin-left: 5px; opacity: 0.3; transition: all 0.2s; font-size: 12px; }
         .roster-del-btn:hover { opacity: 1; }
+        .add-roster-char-btn { width: 100%; margin-top: 10px; background: transparent; border: 1px dashed var(--card-border); color: var(--text-muted); padding: 8px; border-radius: 6px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+        .add-roster-char-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); background: rgba(212, 175, 55, 0.05); }
         #admin-json-editor { width: 100%; flex-grow: 1; background: #0a0a0c; color: #10b981; border: 1px solid var(--card-border); padding: 15px; font-family: monospace; font-size: 13px; border-radius: 6px; resize: none; }
     </style>
 </head>
 <body>
 
-    <h1>Lost Ark <span>Static</span></h1>
+    <h1>Lost Ark <span>Static</span> Takipçisi</h1>
+
     <div class="dashboard-controls">
         <div class="btn-group">
             <button class="btn" style="background: linear-gradient(135deg, var(--accent-red), #9f1239); box-shadow: 0 5px 20px rgba(225, 29, 72, 0.4);" onclick="syncAllParties()">🔄 Log Taramasını Başlat</button>
@@ -99,11 +102,49 @@
         <div id="sync-status" style="font-size: 14px; color: var(--accent-gold); font-weight: 600;">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
         
         <div id="static-gold-counter" style="background: rgba(212, 175, 55, 0.1); padding: 8px 15px; border-radius: 6px; border: 1px dashed var(--accent-gold); color: var(--accent-gold); font-weight: bold; font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; letter-spacing: 1px; margin-top: 5px;">
-            💰<span style="color:#fff;">0 Gold</span>
+            💰 Statik Ekiple Kazanılan: <span style="color:#fff;">0 Gold</span>
         </div>
     </div>
+
     <div class="raid-container" id="raid-container"></div>
 
+    <!-- Modallar -->
+    <div class="modal-overlay" id="partyModal">
+        <div class="modal-box">
+            <h3 class="modal-title" id="modalRaidName">Raid Adı</h3>
+            <select class="modal-select" id="difficultySelect"></select>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('partyModal').style.display='none'">İptal</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmAddParty()">Oluştur</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="addCharModal" style="z-index: 1002;">
+        <div class="modal-box">
+            <h3 class="modal-title" id="addCharTitle">Karakter Ekle</h3>
+            <input type="text" id="modalCharName" class="modal-input" placeholder="Karakter Adı" autocomplete="off" oninput="handleCharNameInput(this.value)">
+            <select id="modalCharClass" class="modal-select">
+                <option value="Bilinmiyor">Sınıf Seçin...</option>
+                <optgroup label="Support"><option value="Paladin">Paladin</option><option value="Bard">Bard</option><option value="Artist">Artist</option><option value="Valkyrie">Valkyrie</option></optgroup>
+                <optgroup label="DPS (Warrior)"><option value="Berserker">Berserker</option><option value="Destroyer">Destroyer</option><option value="Gunlancer">Gunlancer</option><option value="Slayer">Slayer</option></optgroup>
+                <optgroup label="DPS (Martial Artist)"><option value="Glaivier">Glaivier</option><option value="Scrapper">Scrapper</option><option value="Soulfist">Soulfist</option><option value="Striker">Striker</option><option value="Wardancer">Wardancer</option><option value="Breaker">Breaker</option></optgroup>
+                <optgroup label="DPS (Gunner)"><option value="Artillerist">Artillerist</option><option value="Deadeye">Deadeye</option><option value="Gunslinger">Gunslinger</option><option value="Machinist">Machinist</option><option value="Sharpshooter">Sharpshooter</option></optgroup>
+                <optgroup label="DPS (Mage & Assassin)"><option value="Arcanist">Arcanist</option><option value="Sorceress">Sorceress</option><option value="Summoner">Summoner</option><option value="Deathblade">Deathblade</option><option value="Shadowhunter">Shadowhunter</option><option value="Reaper">Reaper</option><option value="Souleater">Souleater</option></optgroup>
+                <optgroup label="DPS (Specialist)"><option value="Aeromancer">Aeromancer</option><option value="Wildsoul">Wildsoul</option></optgroup>
+                <optgroup label="Guardian"><option value="Guardianknight">Guardianknight</option></optgroup>
+            </select>
+            <input type="number" id="modalCharGS" class="modal-input" placeholder="Gearscore (Örn: 1720)">
+            <span id="addCharError" style="color:var(--accent-red); font-size:13px; font-weight:bold; display:none; text-align:center;"></span>
+            <input type="hidden" id="modalContextRaid"><input type="hidden" id="modalContextParty"><input type="hidden" id="modalContextRoster">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addCharModal').style.display='none'">İptal</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmAddChar()">Ekle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Paneli -->
     <div class="modal-overlay" id="adminModal">
         <div class="modal-box modal-box-large">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -128,7 +169,6 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h4 style="margin:0; color:var(--accent-gold);">👥 Roster Yönetimi</h4>
                         <div style="display: flex; gap: 5px;">
-                            <!-- YENİDEN EKLENEN OTO GS GÜNCELLEME BUTONU -->
                             <button class="btn-raw" style="background:#d4af37; color:#000; padding: 4px 8px; font-size:10px;" onclick="performManualReset()">📅 Reset (Tikler)</button>
                             <button id="autoGsBtnAdmin" class="btn-raw" style="background: linear-gradient(135deg, #10b981, #047857); padding: 4px 8px; font-size:10px;" onclick="autoUpdateAllGS()">🚀 Oto GS</button>
                         </div>
@@ -139,11 +179,12 @@
         </div>
     </div>
 
-    <!-- Edit Sınıf / GS / DB Modalları -->
+    <!-- Sınıf / GS / Roster Ekleme / DB Modalları -->
     <div class="modal-overlay" id="dbTableModal" style="z-index: 1001;"><div class="modal-box modal-box-large"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3 class="modal-title">📊 Tüm Veritabanı Tablosu</h3><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('dbTableModal').style.display='none'">Kapat</button></div><div id="admin-table-container" style="overflow-y:auto; max-height: 70vh;"></div></div></div>
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1003;"><div class="modal-box modal-box-medium"><div style="display: flex; justify-content: space-between; align-items: center;"><h3 class="modal-title">🛠️ Raw JSON</h3><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('rawJsonModal').style.display='none'">Kapat</button></div><textarea id="admin-json-editor"></textarea><button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveRawJsonData()">💾 Buluta Kaydet</button></div></div>
     <div class="modal-overlay" id="editClassModal" style="z-index: 1002;"><div class="modal-box"><h3 class="modal-title">Sınıf Düzenle</h3><input type="hidden" id="editClassCharName"><select id="editClassSelect" class="modal-select"><option value="Bilinmiyor">Sınıf Seçin...</option><optgroup label="Support"><option value="Paladin">Paladin</option><option value="Bard">Bard</option><option value="Artist">Artist</option><option value="Valkyrie">Valkyrie</option></optgroup><optgroup label="DPS (Warrior)"><option value="Berserker">Berserker</option><option value="Destroyer">Destroyer</option><option value="Gunlancer">Gunlancer</option><option value="Slayer">Slayer</option></optgroup><optgroup label="DPS (Martial Artist)"><option value="Glaivier">Glaivier</option><option value="Scrapper">Scrapper</option><option value="Soulfist">Soulfist</option><option value="Striker">Striker</option><option value="Wardancer">Wardancer</option><option value="Breaker">Breaker</option></optgroup><optgroup label="DPS (Gunner)"><option value="Artillerist">Artillerist</option><option value="Deadeye">Deadeye</option><option value="Gunslinger">Gunslinger</option><option value="Machinist">Machinist</option><option value="Sharpshooter">Sharpshooter</option></optgroup><optgroup label="DPS (Mage & Assassin)"><option value="Arcanist">Arcanist</option><option value="Sorceress">Sorceress</option><option value="Summoner">Summoner</option><option value="Deathblade">Deathblade</option><option value="Shadowhunter">Shadowhunter</option><option value="Reaper">Reaper</option><option value="Souleater">Souleater</option></optgroup><optgroup label="DPS (Specialist)"><option value="Aeromancer">Aeromancer</option><option value="Wildsoul">Wildsoul</option></optgroup><optgroup label="Guardian"><option value="Guardianknight">Guardianknight</option></optgroup></select><div class="modal-buttons"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editClassModal').style.display='none'">İptal</button><button class="modal-btn modal-btn-confirm" onclick="confirmEditClass()">Kaydet</button></div></div></div>
     <div class="modal-overlay" id="editGsModal" style="z-index: 1002;"><div class="modal-box"><h3 class="modal-title">GS Düzenle</h3><input type="number" id="editGsInput" class="modal-input" placeholder="Yeni Gearscore"><input type="hidden" id="editGsCharName"><div class="modal-buttons"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editGsModal').style.display='none'">İptal</button><button class="modal-btn modal-btn-confirm" onclick="confirmEditGs()">Kaydet</button></div></div></div>
+    <div class="modal-overlay" id="addRosterModal" style="z-index: 1002;"><div class="modal-box"><h3 class="modal-title">Yeni Roster Grubu</h3><input type="text" id="newRosterInput" class="modal-input" placeholder="Roster Adı (Örn: Yedek Kadro)" autocomplete="off"><div class="modal-buttons"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('addRosterModal').style.display='none'">İptal</button><button class="modal-btn modal-btn-confirm" onclick="confirmNewRoster()">Oluştur</button></div></div></div>
 
     <script>
         const WORKER_URL = "https://lostarkproxy.bilgehangulseven.workers.dev";
@@ -153,6 +194,8 @@
         const RAID_DIFFICULTIES = { "armoche": { "NM": 1700, "HM": 1720 }, "kazeros": { "NM": 1710, "HM": 1730 }, "serca": { "NM": 1710, "HM": 1730, "NMR": 1740 }, "cathedral": { "NM": 1700, "HM": 1720, "NMR": 1750 } };
         const MIN_GS = { "armoche": 1700, "kazeros": 1710, "serca": 1710, "cathedral": 1700 };
         
+        const KNOWN_CLASSES = { "holysissy": "Valkyrie", "zeradorpala": "Paladin", "artissy": "Artist", "aelathea": "Bard", "anilessa": "Artist", "laithwen": "Paladin" };
+
         function initDefaultData() {
             return {
                 "armoche": [], "kazeros": [], "serca": [], "cathedral": [],
@@ -182,7 +225,6 @@
             try { await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) }); } catch (error) {}
         }
 
-        // --- YENİDEN EKLENEN: OTO GS GÜNCELLEME FONKSİYONU ---
         async function autoUpdateAllGS() {
             const statusText = document.getElementById('sync-status');
             const btn = document.getElementById('autoGsBtnAdmin');
@@ -279,7 +321,6 @@
             }, 5000);
         }
 
-        // Gold Hesaplama
         function calculateGold() {
             let staticTotalGold = 0; 
             let adminTotalGold = 0;  
@@ -336,7 +377,6 @@
         function getActualGS(charName, defaultGS) { return (rosterData.customGS && rosterData.customGS[charName.toLowerCase()]) || defaultGS || 0; }
         function getActualClass(charName, defaultClass) { return (rosterData.customClasses && rosterData.customClasses[charName.toLowerCase()]) || defaultClass || "Bilinmiyor"; }
 
-        // Sürükle Bırak İşlemleri
         window.dragStartParty = function(ev, raid, pIndex) { ev.dataTransfer.setData("text/plain", JSON.stringify({ type: 'party', raid, pIndex })); ev.stopPropagation(); }
         window.dragStart = function(ev, raid, pIndex, mIndex) { ev.dataTransfer.setData("text/plain", JSON.stringify({ type: 'member', raid, pIndex, mIndex })); ev.stopPropagation(); }
         window.allowCardDrop = function(ev, card) { ev.preventDefault(); card.classList.add('drag-active'); }
@@ -449,14 +489,91 @@
                         cardHTML += `
                                     <li class="empty-drop-zone" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropEmpty(event, '${raid}', ${pIndex})"><span>+ Boş Slota Taşı</span></li>
                                 </ul>
+                                <button class="add-member-btn" onclick="addCharacter('${raid}', ${pIndex})">+ Karakter Ekle</button>
                             </div>
                         `;
                         gridHTML += cardHTML;
                     });
                 }
-                gridHTML += `</div>`; section.innerHTML = headerHTML + gridHTML; container.appendChild(section);
+                gridHTML += `</div><button class="add-party-btn" onclick="openPartyModal('${raid}')">+ ${raidDisplayNames[raid]} İçin Yeni Parti Ekle</button></div>`;
+                section.innerHTML = headerHTML + gridHTML; container.appendChild(section);
             });
             calculateGold();
+        }
+
+        // --- Roster Ekleme & Yönetimi (GERİ GETİRİLDİ) ---
+        function openNewRosterModal() { document.getElementById('newRosterInput').value = ""; document.getElementById('addRosterModal').style.display = 'flex'; setTimeout(() => document.getElementById('newRosterInput').focus(), 100); }
+        async function confirmNewRoster() {
+            let rName = document.getElementById('newRosterInput').value.trim(); if(!rName) return;
+            if(!rosterData.customRosters) rosterData.customRosters = {}; if(!rosterData.customRosters[rName]) rosterData.customRosters[rName] = [];
+            document.getElementById('addRosterModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+        }
+
+        async function removeRoster(rosterName) {
+            if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
+                delete rosterData.customRosters[rosterName]; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+            }
+        }
+
+        async function removeRosterCharacter(rosterName, charName) {
+            if (confirm(`"${charName}" karakterini ${rosterName} grubundan silmek istediğinize emin misiniz?`)) {
+                rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
+                renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+            }
+        }
+
+        function addRosterCharacter(rosterName) {
+            document.getElementById('addCharTitle').innerText = rosterName + " İçin Karakter";
+            document.getElementById('modalCharName').value = ""; 
+            document.getElementById('modalCharGS').value = ""; 
+            document.getElementById('modalCharClass').value = "Bilinmiyor";
+            document.getElementById('modalCharGS').style.borderColor = "var(--card-border)"; 
+            document.getElementById('modalCharClass').style.borderColor = "var(--card-border)";
+            document.getElementById('addCharError').style.display = "none";
+            
+            document.getElementById('modalContextRaid').value = ""; 
+            document.getElementById('modalContextParty').value = ""; 
+            document.getElementById('modalContextRoster').value = rosterName;
+            document.getElementById('addCharModal').style.display = 'flex'; setTimeout(() => document.getElementById('modalCharName').focus(), 100);
+        }
+
+        function handleCharNameInput(val) {
+            let knownGs = getActualGS(val, 0);
+            let knownClass = getActualClass(val, "Bilinmiyor");
+            let gsInput = document.getElementById('modalCharGS');
+            let classInput = document.getElementById('modalCharClass');
+            if(knownGs > 0) { gsInput.value = knownGs; gsInput.style.borderColor = "var(--success-green)"; } else { gsInput.style.borderColor = "var(--card-border)"; }
+            if(knownClass !== "Bilinmiyor") { classInput.value = knownClass; classInput.style.borderColor = "var(--success-green)"; } else { classInput.value = "Bilinmiyor"; classInput.style.borderColor = "var(--card-border)"; }
+        }
+
+        async function confirmAddChar() {
+            let name = document.getElementById('modalCharName').value.trim(); 
+            let gsStr = document.getElementById('modalCharGS').value;
+            let charClass = document.getElementById('modalCharClass').value;
+            let raid = document.getElementById('modalContextRaid').value; 
+            let pIndex = document.getElementById('modalContextParty').value; 
+            let rosterName = document.getElementById('modalContextRoster').value; 
+            let errSpan = document.getElementById('addCharError');
+
+            if(!name) { errSpan.innerText = "Lütfen karakter adı girin!"; errSpan.style.display = "block"; return; }
+            let gs = parseFloat(gsStr); if(isNaN(gs)) gs = getActualGS(name, 0); 
+            
+            if (!rosterData.customClasses) rosterData.customClasses = {};
+            rosterData.customClasses[name.toLowerCase()] = charClass;
+
+            if(rosterName) { 
+                if (isNaN(gs) || gs <= 0) { errSpan.innerText = "Geçerli bir Gearscore girilmedi!"; errSpan.style.display = "block"; return; }
+                if (!rosterData.customRosters) rosterData.customRosters = {}; if (!rosterData.customGS) rosterData.customGS = {};
+                if (!rosterData.customRosters[rosterName].includes(name.toLowerCase())) rosterData.customRosters[rosterName].push(name.toLowerCase());
+                rosterData.customGS[name.toLowerCase()] = gs;
+                document.getElementById('addCharModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); renderUI(); try { await saveDataToCloud(); } catch(e){}
+            } else if (raid && pIndex !== "") { 
+                let partyReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
+                if (isNaN(gs) || gs < partyReqGS) { errSpan.innerText = `GS Yetersiz! Minimum gereken: ${partyReqGS}`; errSpan.style.display = "block"; return; }
+                if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[name.toLowerCase()] = gs;
+                rosterData[raid][pIndex].members.push({ name: name, region: "CE", gs: gs, charClass: charClass });
+                document.getElementById('addCharModal').style.display = 'none'; renderUI(); try { await saveDataToCloud(); } catch(e){}
+            }
         }
 
         // Admin Modal Fonksiyonları
@@ -525,13 +642,23 @@
         function renderAdminRosters() {
             if (!rosterData.customRosters) return; let html = '';
             for (const [rosterName, members] of Object.entries(rosterData.customRosters)) {
-                html += `<div class="roster-group"><h4>${rosterName}</h4><div class="roster-grid">`;
+                html += `<div class="roster-group"><h4>${rosterName} <button class="roster-del-btn" style="float:right;" onclick="removeRoster('${rosterName}')">🗑️</button></h4><div class="roster-grid">`;
                 members.forEach(member => {
-                    let actualGS = getActualGS(member, 0); let actualClass = getActualClass(member, "Bilinmiyor"); let displayName = member.charAt(0).toUpperCase() + member.slice(1);
-                    html += `<div class="roster-member"><span style="display:flex; align-items:center; gap:6px;"><span style="cursor:pointer; border-bottom:1px dashed #cbd5e1;" onclick="editCharacterClass('${member}', '${actualClass}')">${displayName}</span></span><span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})">[${actualGS}]</span></div>`;
+                    let actualGS = getActualGS(member, 0); 
+                    let actualClass = getActualClass(member, "Bilinmiyor"); 
+                    let displayName = member.charAt(0).toUpperCase() + member.slice(1);
+                    html += `<div class="roster-member">
+                                <span style="display:flex; align-items:center; gap:6px;">
+                                    <img src="Class Icons/${actualClass}.png" style="width:16px; height:16px; border-radius:3px;" onerror="this.style.display='none';">
+                                    <span style="cursor:pointer; border-bottom:1px dashed #cbd5e1;" onclick="editCharacterClass('${member}', '${actualClass}')">${displayName}</span> 
+                                    <button class="roster-del-btn" onclick="removeRosterCharacter('${rosterName}', '${member}')" title="Gruptan Sil">✖</button>
+                                </span>
+                                <span class="member-gs" onclick="editCharacterGS('${member}', ${actualGS})">[${actualGS}]</span>
+                            </div>`;
                 });
-                html += `</div></div>`;
+                html += `</div><button class="add-roster-char-btn" onclick="addRosterCharacter('${rosterName}')">+ Ekle</button></div>`;
             }
+            html += `<button class="add-party-btn" style="margin-top: 15px;" onclick="openNewRosterModal()">+ Yeni Roster Grubu</button>`;
             document.getElementById('admin-rosters-container').innerHTML = html;
         }
 
