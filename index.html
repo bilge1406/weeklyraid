@@ -102,7 +102,7 @@
         <div id="sync-status" style="font-size: 14px; color: var(--accent-gold); font-weight: 600;">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
         
         <div id="static-gold-counter" style="background: rgba(212, 175, 55, 0.1); padding: 8px 15px; border-radius: 6px; border: 1px dashed var(--accent-gold); color: var(--accent-gold); font-weight: bold; font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; letter-spacing: 1px; margin-top: 5px;">
-            💰: <span style="color:#fff;">0 Gold</span>
+            💰 Statik Ekiple Kazanılan: <span style="color:#fff;">0 Gold</span>
         </div>
     </div>
 
@@ -156,7 +156,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <h4 style="margin:0; color:var(--accent-gold);">📋 Bilge Roster Analizi</h4>
-                            <span id="admin-gold-summary" style="font-size: 12px; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--success-green); color: var(--success-green); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-family: 'Inter', sans-serif;">💰: 0 G</span>
+                            <span id="admin-gold-summary" style="font-size: 12px; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--success-green); color: var(--success-green); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-family: 'Inter', sans-serif;">💰 İlk 6 Karakter: 0 G</span>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-raw" style="background:#10b981;" onclick="openDbTableModal()">📊 Tüm Partiler</button>
@@ -361,10 +361,10 @@
             });
             
             let staticCounter = document.getElementById('static-gold-counter');
-            if(staticCounter) staticCounter.innerHTML = `💰: <span style="color:#fff;">${staticTotalGold.toLocaleString('tr-TR')} Gold</span>`;
+            if(staticCounter) staticCounter.innerHTML = `💰 Statik Ekiple Kazanılan: <span style="color:#fff;">${staticTotalGold.toLocaleString('tr-TR')} Gold</span>`;
             
             let adminCounter = document.getElementById('admin-gold-summary');
-            if(adminCounter) adminCounter.innerHTML = `💰: ${adminTotalGold.toLocaleString('tr-TR')} G`;
+            if(adminCounter) adminCounter.innerHTML = `💰 İlk 6 Karakter (Toplam): ${adminTotalGold.toLocaleString('tr-TR')} G`;
         }
 
         async function performManualReset() {
@@ -517,7 +517,13 @@
         }
 
         // Admin Modal Fonksiyonları
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; renderBilgeRosterAnalysis(); renderAdminRosters(); }
+        function openAdminModal() { 
+            const pass = prompt("Admin Şifresi:"); 
+            if (pass !== "1234") return; 
+            document.getElementById('adminModal').style.display = 'flex'; 
+            renderBilgeRosterAnalysis(); 
+            renderAdminRosters(); 
+        }
         function openDbTableModal() { renderAdminTable(); document.getElementById('dbTableModal').style.display = 'flex'; }
         function openRawJsonModal() { document.getElementById('admin-json-editor').value = JSON.stringify(rosterData, null, 4); document.getElementById('rawJsonModal').style.display = 'flex'; }
         async function saveRawJsonData() { try { rosterData = JSON.parse(document.getElementById('admin-json-editor').value); renderUI(); if (document.getElementById('adminModal').style.display === 'flex') { renderAdminTable(); renderAdminRosters(); renderBilgeRosterAnalysis(); } await fetch(WORKER_URL + "/?action=save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(rosterData) }); document.getElementById('rawJsonModal').style.display = 'none'; } catch (e) { alert("HATA: JSON formatı bozuk!"); } }
