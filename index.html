@@ -102,7 +102,7 @@
         <div id="sync-status" style="font-size: 14px; color: var(--accent-gold); font-weight: 600;">Sistem Hazır. Tüm partiler için tarama başlatabilirsiniz.</div>
         
         <div id="static-gold-counter" style="background: rgba(212, 175, 55, 0.1); padding: 8px 15px; border-radius: 6px; border: 1px dashed var(--accent-gold); color: var(--accent-gold); font-weight: bold; font-family: 'Rajdhani', sans-serif; font-size: 1.3rem; letter-spacing: 1px; margin-top: 5px;">
-            💰<span style="color:#fff;">0 Gold</span>
+            💰 Statik Ekiple Kazanılan: <span style="color:#fff;">0 Gold</span>
         </div>
     </div>
 
@@ -156,7 +156,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <div style="display: flex; align-items: center; gap: 15px;">
                             <h4 style="margin:0; color:var(--accent-gold);">📋 Bilge Roster Analizi</h4>
-                            <span id="admin-gold-summary" style="font-size: 12px; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--success-green); color: var(--success-green); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-family: 'Inter', sans-serif;">💰: 0 G</span>
+                            <span id="admin-gold-summary" style="font-size: 12px; background: rgba(16, 185, 129, 0.1); border: 1px dashed var(--success-green); color: var(--success-green); padding: 4px 8px; border-radius: 4px; font-weight: bold; font-family: 'Inter', sans-serif;">💰 İlk 6 Karakter: 0 G</span>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn-raw" style="background:#10b981;" onclick="openDbTableModal()">📊 Tüm Partiler</button>
@@ -179,7 +179,7 @@
         </div>
     </div>
 
-    <!-- Sınıf / GS / Roster Ekleme / DB Modalları -->
+    <!-- Edit Sınıf / GS / DB Modalları -->
     <div class="modal-overlay" id="dbTableModal" style="z-index: 1001;"><div class="modal-box modal-box-large"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3 class="modal-title">📊 Tüm Veritabanı Tablosu</h3><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('dbTableModal').style.display='none'">Kapat</button></div><div id="admin-table-container" style="overflow-y:auto; max-height: 70vh;"></div></div></div>
     <div class="modal-overlay" id="rawJsonModal" style="z-index: 1003;"><div class="modal-box modal-box-medium"><div style="display: flex; justify-content: space-between; align-items: center;"><h3 class="modal-title">🛠️ Raw JSON</h3><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('rawJsonModal').style.display='none'">Kapat</button></div><textarea id="admin-json-editor"></textarea><button class="modal-btn modal-btn-confirm" style="width: 100%;" onclick="saveRawJsonData()">💾 Buluta Kaydet</button></div></div>
     <div class="modal-overlay" id="editClassModal" style="z-index: 1002;"><div class="modal-box"><h3 class="modal-title">Sınıf Düzenle</h3><input type="hidden" id="editClassCharName"><select id="editClassSelect" class="modal-select"><option value="Bilinmiyor">Sınıf Seçin...</option><optgroup label="Support"><option value="Paladin">Paladin</option><option value="Bard">Bard</option><option value="Artist">Artist</option><option value="Valkyrie">Valkyrie</option></optgroup><optgroup label="DPS (Warrior)"><option value="Berserker">Berserker</option><option value="Destroyer">Destroyer</option><option value="Gunlancer">Gunlancer</option><option value="Slayer">Slayer</option></optgroup><optgroup label="DPS (Martial Artist)"><option value="Glaivier">Glaivier</option><option value="Scrapper">Scrapper</option><option value="Soulfist">Soulfist</option><option value="Striker">Striker</option><option value="Wardancer">Wardancer</option><option value="Breaker">Breaker</option></optgroup><optgroup label="DPS (Gunner)"><option value="Artillerist">Artillerist</option><option value="Deadeye">Deadeye</option><option value="Gunslinger">Gunslinger</option><option value="Machinist">Machinist</option><option value="Sharpshooter">Sharpshooter</option></optgroup><optgroup label="DPS (Mage & Assassin)"><option value="Arcanist">Arcanist</option><option value="Sorceress">Sorceress</option><option value="Summoner">Summoner</option><option value="Deathblade">Deathblade</option><option value="Shadowhunter">Shadowhunter</option><option value="Reaper">Reaper</option><option value="Souleater">Souleater</option></optgroup><optgroup label="DPS (Specialist)"><option value="Aeromancer">Aeromancer</option><option value="Wildsoul">Wildsoul</option></optgroup><optgroup label="Guardian"><option value="Guardianknight">Guardianknight</option></optgroup></select><div class="modal-buttons"><button class="modal-btn modal-btn-cancel" onclick="document.getElementById('editClassModal').style.display='none'">İptal</button><button class="modal-btn modal-btn-confirm" onclick="confirmEditClass()">Kaydet</button></div></div></div>
@@ -324,32 +324,47 @@
         function calculateGold() {
             let staticTotalGold = 0; 
             let adminTotalGold = 0;  
-            let bilgeRoster = [];
-            if (rosterData.customRosters && rosterData.customRosters["Bilge Roster"]) bilgeRoster = rosterData.customRosters["Bilge Roster"].slice(0, 6);
+            
+            let fullBilgeRoster = [];
+            let top6BilgeRoster = [];
+            
+            if (rosterData.customRosters && rosterData.customRosters["Bilge Roster"]) {
+                fullBilgeRoster = rosterData.customRosters["Bilge Roster"].map(n => n.toLowerCase());
+                top6BilgeRoster = fullBilgeRoster.slice(0, 6);
+            }
+            
             const validRaids = ["armoche", "kazeros", "serca"];
             
-            bilgeRoster.forEach(charName => {
-                let charLower = charName.toLowerCase();
-                validRaids.forEach(raid => {
-                    if (rosterData[raid]) {
-                        rosterData[raid].forEach(party => {
-                            if (party.done && party.members.some(m => m.name.toLowerCase() === charLower)) {
-                                let gold = 0; let reqGS = party.reqGS || MIN_GS[raid];
-                                if (raid === "armoche") gold = (reqGS >= 1720) ? 42000 : 33000;
-                                else if (raid === "kazeros") gold = (reqGS >= 1730) ? 52000 : 40000;
-                                else if (raid === "serca") gold = (reqGS >= 1740) ? 54000 : (reqGS >= 1730) ? 44000 : 35000;
-                                adminTotalGold += gold; 
-                                if (party.members.length > 1) staticTotalGold += gold; 
+            validRaids.forEach(raid => {
+                if (rosterData[raid]) {
+                    rosterData[raid].forEach(party => {
+                        if (party.done) {
+                            let gold = 0; 
+                            let reqGS = party.reqGS || MIN_GS[raid];
+                            
+                            if (raid === "armoche") gold = (reqGS >= 1720) ? 42000 : 33000;
+                            else if (raid === "kazeros") gold = (reqGS >= 1730) ? 52000 : 40000;
+                            else if (raid === "serca") gold = (reqGS >= 1740) ? 54000 : (reqGS >= 1730) ? 44000 : 35000;
+
+                            let hasTop6 = party.members.some(m => top6BilgeRoster.includes(m.name.toLowerCase()));
+                            if (hasTop6) {
+                                adminTotalGold += gold;
                             }
-                        });
-                    }
-                });
+
+                            let hasAnyBilge = party.members.some(m => fullBilgeRoster.includes(m.name.toLowerCase()));
+                            if (hasAnyBilge && party.members.length > 1) {
+                                staticTotalGold += gold; 
+                            }
+                        }
+                    });
+                }
             });
             
             let staticCounter = document.getElementById('static-gold-counter');
             if(staticCounter) staticCounter.innerHTML = `💰 Statik Ekiple Kazanılan: <span style="color:#fff;">${staticTotalGold.toLocaleString('tr-TR')} Gold</span>`;
+            
             let adminCounter = document.getElementById('admin-gold-summary');
-            if(adminCounter) adminCounter.innerHTML = `💰 İlk 6 Karakter: ${adminTotalGold.toLocaleString('tr-TR')} G`;
+            if(adminCounter) adminCounter.innerHTML = `💰 İlk 6 Karakter (Toplam): ${adminTotalGold.toLocaleString('tr-TR')} G`;
         }
 
         async function performManualReset() {
@@ -501,81 +516,6 @@
             calculateGold();
         }
 
-        // --- Roster Ekleme & Yönetimi (GERİ GETİRİLDİ) ---
-        function openNewRosterModal() { document.getElementById('newRosterInput').value = ""; document.getElementById('addRosterModal').style.display = 'flex'; setTimeout(() => document.getElementById('newRosterInput').focus(), 100); }
-        async function confirmNewRoster() {
-            let rName = document.getElementById('newRosterInput').value.trim(); if(!rName) return;
-            if(!rosterData.customRosters) rosterData.customRosters = {}; if(!rosterData.customRosters[rName]) rosterData.customRosters[rName] = [];
-            document.getElementById('addRosterModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
-        }
-
-        async function removeRoster(rosterName) {
-            if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
-                delete rosterData.customRosters[rosterName]; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
-            }
-        }
-
-        async function removeRosterCharacter(rosterName, charName) {
-            if (confirm(`"${charName}" karakterini ${rosterName} grubundan silmek istediğinize emin misiniz?`)) {
-                rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
-                renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
-            }
-        }
-
-        function addRosterCharacter(rosterName) {
-            document.getElementById('addCharTitle').innerText = rosterName + " İçin Karakter";
-            document.getElementById('modalCharName').value = ""; 
-            document.getElementById('modalCharGS').value = ""; 
-            document.getElementById('modalCharClass').value = "Bilinmiyor";
-            document.getElementById('modalCharGS').style.borderColor = "var(--card-border)"; 
-            document.getElementById('modalCharClass').style.borderColor = "var(--card-border)";
-            document.getElementById('addCharError').style.display = "none";
-            
-            document.getElementById('modalContextRaid').value = ""; 
-            document.getElementById('modalContextParty').value = ""; 
-            document.getElementById('modalContextRoster').value = rosterName;
-            document.getElementById('addCharModal').style.display = 'flex'; setTimeout(() => document.getElementById('modalCharName').focus(), 100);
-        }
-
-        function handleCharNameInput(val) {
-            let knownGs = getActualGS(val, 0);
-            let knownClass = getActualClass(val, "Bilinmiyor");
-            let gsInput = document.getElementById('modalCharGS');
-            let classInput = document.getElementById('modalCharClass');
-            if(knownGs > 0) { gsInput.value = knownGs; gsInput.style.borderColor = "var(--success-green)"; } else { gsInput.style.borderColor = "var(--card-border)"; }
-            if(knownClass !== "Bilinmiyor") { classInput.value = knownClass; classInput.style.borderColor = "var(--success-green)"; } else { classInput.value = "Bilinmiyor"; classInput.style.borderColor = "var(--card-border)"; }
-        }
-
-        async function confirmAddChar() {
-            let name = document.getElementById('modalCharName').value.trim(); 
-            let gsStr = document.getElementById('modalCharGS').value;
-            let charClass = document.getElementById('modalCharClass').value;
-            let raid = document.getElementById('modalContextRaid').value; 
-            let pIndex = document.getElementById('modalContextParty').value; 
-            let rosterName = document.getElementById('modalContextRoster').value; 
-            let errSpan = document.getElementById('addCharError');
-
-            if(!name) { errSpan.innerText = "Lütfen karakter adı girin!"; errSpan.style.display = "block"; return; }
-            let gs = parseFloat(gsStr); if(isNaN(gs)) gs = getActualGS(name, 0); 
-            
-            if (!rosterData.customClasses) rosterData.customClasses = {};
-            rosterData.customClasses[name.toLowerCase()] = charClass;
-
-            if(rosterName) { 
-                if (isNaN(gs) || gs <= 0) { errSpan.innerText = "Geçerli bir Gearscore girilmedi!"; errSpan.style.display = "block"; return; }
-                if (!rosterData.customRosters) rosterData.customRosters = {}; if (!rosterData.customGS) rosterData.customGS = {};
-                if (!rosterData.customRosters[rosterName].includes(name.toLowerCase())) rosterData.customRosters[rosterName].push(name.toLowerCase());
-                rosterData.customGS[name.toLowerCase()] = gs;
-                document.getElementById('addCharModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); renderUI(); try { await saveDataToCloud(); } catch(e){}
-            } else if (raid && pIndex !== "") { 
-                let partyReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
-                if (isNaN(gs) || gs < partyReqGS) { errSpan.innerText = `GS Yetersiz! Minimum gereken: ${partyReqGS}`; errSpan.style.display = "block"; return; }
-                if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[name.toLowerCase()] = gs;
-                rosterData[raid][pIndex].members.push({ name: name, region: "CE", gs: gs, charClass: charClass });
-                document.getElementById('addCharModal').style.display = 'none'; renderUI(); try { await saveDataToCloud(); } catch(e){}
-            }
-        }
-
         // Admin Modal Fonksiyonları
         function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; renderBilgeRosterAnalysis(); renderAdminRosters(); }
         function openDbTableModal() { renderAdminTable(); document.getElementById('dbTableModal').style.display = 'flex'; }
@@ -664,6 +604,81 @@
 
         function removeCharacter(raid, pIndex, mIndex, charName) { if (confirm(`"${charName}" silinsin mi?`)) { rosterData[raid][pIndex].members.splice(mIndex, 1); renderUI(); saveDataToCloud(); } }
         function removeParty(raid, pIndex, partyName) { if (confirm(`"${partyName}" adlı partiyi silmek istediğinize emin misiniz?`)) { rosterData[raid].splice(pIndex, 1); rosterData[raid].forEach((p, idx) => { p.name = p.name.replace(/^\d+\./, `${idx + 1}.`); }); renderUI(); saveDataToCloud(); } }
+
+        // Roster Yönetimi Fonksiyonları
+        function openNewRosterModal() { document.getElementById('newRosterInput').value = ""; document.getElementById('addRosterModal').style.display = 'flex'; setTimeout(() => document.getElementById('newRosterInput').focus(), 100); }
+        async function confirmNewRoster() {
+            let rName = document.getElementById('newRosterInput').value.trim(); if(!rName) return;
+            if(!rosterData.customRosters) rosterData.customRosters = {}; if(!rosterData.customRosters[rName]) rosterData.customRosters[rName] = [];
+            document.getElementById('addRosterModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+        }
+
+        async function removeRoster(rosterName) {
+            if (confirm(`⚠️ DİKKAT: "${rosterName}" grubunu tamamen silmek istediğinize emin misiniz?`)) {
+                delete rosterData.customRosters[rosterName]; renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+            }
+        }
+
+        async function removeRosterCharacter(rosterName, charName) {
+            if (confirm(`"${charName}" karakterini ${rosterName} grubundan silmek istediğinize emin misiniz?`)) {
+                rosterData.customRosters[rosterName] = rosterData.customRosters[rosterName].filter(c => c !== charName);
+                renderAdminRosters(); renderBilgeRosterAnalysis(); try { await saveDataToCloud(); } catch(e){}
+            }
+        }
+
+        function addRosterCharacter(rosterName) {
+            document.getElementById('addCharTitle').innerText = rosterName + " İçin Karakter";
+            document.getElementById('modalCharName').value = ""; 
+            document.getElementById('modalCharGS').value = ""; 
+            document.getElementById('modalCharClass').value = "Bilinmiyor";
+            document.getElementById('modalCharGS').style.borderColor = "var(--card-border)"; 
+            document.getElementById('modalCharClass').style.borderColor = "var(--card-border)";
+            document.getElementById('addCharError').style.display = "none";
+            
+            document.getElementById('modalContextRaid').value = ""; 
+            document.getElementById('modalContextParty').value = ""; 
+            document.getElementById('modalContextRoster').value = rosterName;
+            document.getElementById('addCharModal').style.display = 'flex'; setTimeout(() => document.getElementById('modalCharName').focus(), 100);
+        }
+
+        function handleCharNameInput(val) {
+            let knownGs = getActualGS(val, 0);
+            let knownClass = getActualClass(val, "Bilinmiyor");
+            let gsInput = document.getElementById('modalCharGS');
+            let classInput = document.getElementById('modalCharClass');
+            if(knownGs > 0) { gsInput.value = knownGs; gsInput.style.borderColor = "var(--success-green)"; } else { gsInput.style.borderColor = "var(--card-border)"; }
+            if(knownClass !== "Bilinmiyor") { classInput.value = knownClass; classInput.style.borderColor = "var(--success-green)"; } else { classInput.value = "Bilinmiyor"; classInput.style.borderColor = "var(--card-border)"; }
+        }
+
+        async function confirmAddChar() {
+            let name = document.getElementById('modalCharName').value.trim(); 
+            let gsStr = document.getElementById('modalCharGS').value;
+            let charClass = document.getElementById('modalCharClass').value;
+            let raid = document.getElementById('modalContextRaid').value; 
+            let pIndex = document.getElementById('modalContextParty').value; 
+            let rosterName = document.getElementById('modalContextRoster').value; 
+            let errSpan = document.getElementById('addCharError');
+
+            if(!name) { errSpan.innerText = "Lütfen karakter adı girin!"; errSpan.style.display = "block"; return; }
+            let gs = parseFloat(gsStr); if(isNaN(gs)) gs = getActualGS(name, 0); 
+            
+            if (!rosterData.customClasses) rosterData.customClasses = {};
+            rosterData.customClasses[name.toLowerCase()] = charClass;
+
+            if(rosterName) { 
+                if (isNaN(gs) || gs <= 0) { errSpan.innerText = "Geçerli bir Gearscore girilmedi!"; errSpan.style.display = "block"; return; }
+                if (!rosterData.customRosters) rosterData.customRosters = {}; if (!rosterData.customGS) rosterData.customGS = {};
+                if (!rosterData.customRosters[rosterName].includes(name.toLowerCase())) rosterData.customRosters[rosterName].push(name.toLowerCase());
+                rosterData.customGS[name.toLowerCase()] = gs;
+                document.getElementById('addCharModal').style.display = 'none'; renderAdminRosters(); renderBilgeRosterAnalysis(); renderUI(); try { await saveDataToCloud(); } catch(e){}
+            } else if (raid && pIndex !== "") { 
+                let partyReqGS = rosterData[raid][pIndex].reqGS || MIN_GS[raid];
+                if (isNaN(gs) || gs < partyReqGS) { errSpan.innerText = `GS Yetersiz! Minimum gereken: ${partyReqGS}`; errSpan.style.display = "block"; return; }
+                if (!rosterData.customGS) rosterData.customGS = {}; rosterData.customGS[name.toLowerCase()] = gs;
+                rosterData[raid][pIndex].members.push({ name: name, region: "CE", gs: gs, charClass: charClass });
+                document.getElementById('addCharModal').style.display = 'none'; renderUI(); try { await saveDataToCloud(); } catch(e){}
+            }
+        }
 
         async function syncAllParties() {
             const statusText = document.getElementById('sync-status'); statusText.innerText = "⏳ Tarama öncesi güncel veriler çekiliyor..."; statusText.style.color = "var(--accent-gold)";
